@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 from utils.utils import preproc, multiclass_nms, vis
 from utils.utils import BaseEngine
 import tensorrt as trt
@@ -19,9 +21,7 @@ class Predictor(BaseEngine):
         self.class_names = ["gas_bottle"]
     def inference(self, img_path):
         origin_img = cv2.imread(img_path)
-        mean = (0.485, 0.456, 0.406)
-        std = (0.229, 0.224, 0.225)
-        img, ratio = preproc(origin_img, self.imgsz, mean, std)
+        img, ratio = preproc(origin_img, self.imgsz, None, None)
         data = self.infer(img)
         predictions = np.reshape(data[-1], (1, -1, int(5+self.n_classes)))[0]
         dets = self.postprocess(predictions,ratio)
@@ -37,7 +37,7 @@ class Predictor(BaseEngine):
 
 if __name__ == '__main__':
     pred = Predictor(engine_path='yolov5.trt')
-    img_path = '1.jpg'
+    img_path = '../imgs/3.jpg'
     for _ in range(5):
         t1 = time.time()
         pred.inference(img_path)

@@ -46,28 +46,31 @@ python export_trt.py -m onnx-name -o trt-name
 cd yolovx
 python trt.py
 ```
+
 # YOLOV5
 ![](yolov5/3_yolov5.jpg)
+
 ## 导出ONNX
-```sheel
+
+```
 git clone https://github.com/ultralytics/yolov5.git
 ```
-'''python
+
+```python
 python path/to/export.py --weights yolov5s.pt --include  onnx 
 ```
+
 ## 转化为TensorRT Engine 
+
 ```
 python export_trt.py -m onnx-name -o trt-name
 ```
 ## 测试
 
-
 ```
 cd yolov5
 python trt.py
 ```
-
-
 ## 权重文件获取
 [yolox](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolox.trt)
 [yolov5](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolov5.trt)

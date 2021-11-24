@@ -64,3 +64,6 @@ python export_trt.py -m onnx-name -o trt-name
 cd yolov5
 python trt.py
 ```
+## 权重文件获取
+[yolox](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolox.trt)
+[yolov5](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolov5.trt)

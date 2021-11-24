@@ -6,7 +6,7 @@
 ![](yolox/3_yolox.jpg)
 ## 导出ONNX
 
-```sheel
+```
 git clone https://github.com/Megvii-BaseDetection/YOLOX.git
 ```
 ```python
@@ -42,7 +42,7 @@ python export_trt.py -m onnx-name -o trt-name
 ```
 ## 测试
 
-```sheel
+```
 cd yolovx
 python trt.py
 ```
@@ -60,7 +60,7 @@ python path/to/export.py --weights yolov5s.pt --include  onnx
 python export_trt.py -m onnx-name -o trt-name
 ```
 ## 测试
-```sheel
+```
 cd yolov5
 python trt.py
 ```

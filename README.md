@@ -72,7 +72,7 @@ cd yolov5
 python trt.py
 ```
 
-### 请重新或者ONNX 文件 并转化为TRT 引擎
+### 请重新获取ONNX 文件 并转化为TRT 引擎
 ### 权重文件获取 [Only for My]
 [yolox](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolox.trt)
 [yolov5](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolov5.trt)

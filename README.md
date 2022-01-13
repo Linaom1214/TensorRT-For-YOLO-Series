@@ -1,4 +1,4 @@
-# YOLOX and  YOLOV5 TensorRT Python API 
+# YOLOX and  YOLOV5 TensorRT Python API (C++ Soon comming)
 
 ![](imgs/3.jpg)
 

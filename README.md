@@ -1,10 +1,31 @@
-# YOLOX and  YOLOV5 TensorRT Python API (C++ Soon comming)
+# YOLOv6、 YOLOX、 YOLOV5、 TensorRT Python API (C++ Soon comming)
 
-![](imgs/3.jpg)
 
-# YOLOX 
+## YOLOv6
+![](yolov6/3_yolov6.jpg)
+```shell
+git clone https://github.com/meituan/YOLOv6.git
+```
+### 导出onnx
+```shell
+python deploy/ONNX/export_onnx.py --weights yolov6s.pt --img 640 --batch 1
+```
+
+### 转化为TensorRT Engine 
+
+```
+python export_trt.py -m onnx-name -o trt-name
+```
+### 测试
+
+```
+cd yolov5
+python trt.py
+```
+
+## YOLOX 
 ![](yolox/3_yolox.jpg)
-## 导出ONNX
+### 导出ONNX
 
 ```
 git clone https://github.com/Megvii-BaseDetection/YOLOX.git
@@ -36,21 +57,21 @@ return torch.cat((xy, wh, outputs[..., 4:]), dim=-1)
 ```python
 python3 tools/export_onnx.py --output-name yolox_s.onnx -n yolox-s -c yolox_s.pth
 ```
-## 转化为TensorRT Engine 
+### 转化为TensorRT Engine 
 ```
 python export_trt.py -m onnx-name -o trt-name
 ```
-## 测试
+### 测试
 
 ```
 cd yolovx
 python trt.py
 ```
 
-# YOLOV5
+## YOLOV5
 ![](yolov5/3_yolov5.jpg)
 
-## 导出ONNX
+### 导出ONNX
 
 ```
 git clone https://github.com/ultralytics/yolov5.git
@@ -60,19 +81,14 @@ git clone https://github.com/ultralytics/yolov5.git
 python path/to/export.py --weights yolov5s.pt --include  onnx 
 ```
 
-## 转化为TensorRT Engine 
+### 转化为TensorRT Engine 
 
 ```
 python export_trt.py -m onnx-name -o trt-name
 ```
-## 测试
+### 测试
 
 ```
 cd yolov5
 python trt.py
 ```
-
-### 请重新获取ONNX 文件 并转化为TRT 引擎
-### 权重文件获取 [Only for My]
-[yolox](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolox.trt)
-[yolov5](https://github.com/Linaom1214/tensorrt-python/releases/download/v1.0.0/yolov5.trt)

@@ -6,7 +6,7 @@ import cv2
 
 
 class BaseEngine(object):
-    def __init__(self,engine_path):
+    def __init__(self, engine_path):
         logger = trt.Logger(trt.Logger.WARNING)
         runtime = trt.Runtime(logger)
         with open(engine_path, "rb") as f:
@@ -22,10 +22,21 @@ class BaseEngine(object):
             device_mem = cuda.mem_alloc(host_mem.nbytes)
             self.bindings.append(int(device_mem))
             if engine.binding_is_input(binding):
-                self.inputs.append({ 'host': host_mem, 'device': device_mem })
+                self.inputs.append({'host': host_mem, 'device': device_mem})
             else:
-                self.outputs.append({ 'host': host_mem, 'device': device_mem })
-    
+                self.outputs.append({'host': host_mem, 'device': device_mem})
+                
+        self.n_classes = 80
+        self.class_names = [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
+         'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+         'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+         'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
+         'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+         'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+         'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+         'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
+         'hair drier', 'toothbrush' ]
+
     def infer(self, img):
         self.inputs[0]['host'] = np.ravel(img)
         # transfer data to the gpu
@@ -43,19 +54,20 @@ class BaseEngine(object):
 
         data = [out['host'] for out in self.outputs]
         return data
-    
+
     @staticmethod
     def postprocess(predictions, ratio):
         boxes = predictions[:, :4]
         scores = predictions[:, 4:5] * predictions[:, 5:]
         boxes_xyxy = np.ones_like(boxes)
-        boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2]/2.
-        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2.
-        boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
-        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
+        boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2] / 2.
+        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3] / 2.
+        boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2] / 2.
+        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3] / 2.
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=0.45, score_thr=0.1)
         return dets
+
 
 def nms(boxes, scores, nms_thr):
     """Single class NMS implemented in Numpy."""
@@ -86,6 +98,7 @@ def nms(boxes, scores, nms_thr):
 
     return keep
 
+
 def multiclass_nms(boxes, scores, nms_thr, score_thr):
     """Multiclass NMS implemented in Numpy"""
     final_dets = []
@@ -108,6 +121,7 @@ def multiclass_nms(boxes, scores, nms_thr, score_thr):
     if len(final_dets) == 0:
         return None
     return np.concatenate(final_dets, 0)
+
 
 def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
     if len(image.shape) == 3:
@@ -221,7 +235,6 @@ _COLORS = np.array(
 
 
 def vis(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
-
     for i in range(len(boxes)):
         box = boxes[i]
         cls_id = int(cls_ids[i])
@@ -245,7 +258,7 @@ def vis(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
         cv2.rectangle(
             img,
             (x0, y0 + 1),
-            (x0 + txt_size[0] + 1, y0 + int(1.5*txt_size[1])),
+            (x0 + txt_size[0] + 1, y0 + int(1.5 * txt_size[1])),
             txt_bk_color,
             -1
         )

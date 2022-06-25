@@ -19,7 +19,7 @@ python export_trt.py -m onnx-name -o trt-name
 ### 测试
 
 ```
-cd yolov5
+cd yolov6
 python trt.py
 ```
 

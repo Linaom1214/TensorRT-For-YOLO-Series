@@ -1,7 +1,6 @@
-# YOLOv6、 YOLOX、 YOLOV5、 TensorRT Python API (C++ Soon comming)
+# YOLOv6、 YOLOX、 YOLOV5、 TensorRT Python/C++ API 
 
-
-## YOLOv6
+## YOLOv6 [C++, Python Support]
 ![](yolov6/3_yolov6.jpg)
 ```shell
 git clone https://github.com/meituan/YOLOv6.git
@@ -23,7 +22,11 @@ cd yolov6
 python trt.py
 ```
 
-## YOLOX 
+### C++
+
+C++ [Demo](yolov6/cpp/README.md)
+
+## YOLOX [Python Support]
 ![](yolox/3_yolox.jpg)
 ### 导出ONNX
 
@@ -68,7 +71,7 @@ cd yolovx
 python trt.py
 ```
 
-## YOLOV5
+## YOLOV5 [Python Support]
 ![](yolov5/3_yolov5.jpg)
 
 ### 导出ONNX

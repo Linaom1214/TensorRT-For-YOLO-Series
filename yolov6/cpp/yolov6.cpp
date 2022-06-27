@@ -444,9 +444,7 @@ int main(int argc, char** argv) {
         }
     } else {
         std::cerr << "arguments not right!" << std::endl;
-        std::cerr << "run 'python3 yolox/deploy/trt.py -n yolox-{tiny, s, m, l, x}' to serialize model first!" << std::endl;
-        std::cerr << "Then use the following command:" << std::endl;
-        std::cerr << "./yolox ../model_trt.engine -i ../../../assets/dog.jpg  // deserialize file and run inference" << std::endl;
+        std::cerr << "./yolov6 ../model_trt.engine -i ../*.jpg  // deserialize file and run inference" << std::endl;
         return -1;
     }
     const std::string input_image_path {argv[3]};

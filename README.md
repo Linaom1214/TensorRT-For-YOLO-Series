@@ -2,6 +2,14 @@
 
 Here is a Python Demo mybe help you quickly understand this repo [Link](https://aistudio.baidu.com/aistudio/projectdetail/4263301?contributionType=1&shared=1)
 ## YOLOv6 [C++, Python Support]
+
+| model |  input |  | FPS | Device | Language | 
+| -------- | -------- | -------- | ------- | ------- | ------|
+| yolov6s     | 640*640     | FP16     | 360FPS  | A100 | Python |
+| yolov6s     | 640*640     | FP32     | 350FPS | A100| Python |
+| yolov6s     | 640*640     | FP32     | 330FPS | 1080Ti | C++ |
+| yolov6s     | 640*640     | FP32     | 300FPS | 1080Ti | Python |
+
 ![](yolov6/3_yolov6.jpg)
 ```shell
 git clone https://github.com/meituan/YOLOv6.git

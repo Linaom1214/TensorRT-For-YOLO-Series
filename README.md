@@ -10,6 +10,8 @@ Here is a Python Demo mybe help you quickly understand this repo [Link](https://
 | yolov6s     | 640*640     | FP32     | 330FPS | 1080Ti | C++ |
 | yolov6s     | 640*640     | FP32     | 300FPS | 1080Ti | Python |
 
+[bilibili](https://www.bilibili.com/video/BV1x3411w7T6?share_source=copy_web)
+
 ![](yolov6/3_yolov6.jpg)
 ```shell
 git clone https://github.com/meituan/YOLOv6.git

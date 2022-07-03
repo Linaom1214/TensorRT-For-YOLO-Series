@@ -30,5 +30,5 @@ if __name__ == '__main__':
     origin_img = pred.inference(img_path)
     cv2.imwrite("%s_yolov6.jpg" % os.path.splitext(
         os.path.split(img_path)[-1])[0], origin_img)
-    pred.detect_video('../src/video1.mp4')
+    pred.detect_video('../src/video1.mp4') # set 0 use a webcam
     pred.get_fps()

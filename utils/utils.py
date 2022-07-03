@@ -6,7 +6,21 @@ import cv2
 
 
 class BaseEngine(object):
-    def __init__(self, engine_path):
+    def __init__(self, engine_path, imgsz=(640,640)):
+        self.imgsz = imgsz
+        self.mean = None
+        self.std = None
+        self.n_classes = 80
+        self.class_names = [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
+         'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+         'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+         'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
+         'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+         'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+         'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+         'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
+         'hair drier', 'toothbrush' ]
+
         logger = trt.Logger(trt.Logger.WARNING)
         runtime = trt.Runtime(logger)
         with open(engine_path, "rb") as f:
@@ -26,16 +40,6 @@ class BaseEngine(object):
             else:
                 self.outputs.append({'host': host_mem, 'device': device_mem})
                 
-        self.n_classes = 80
-        self.class_names = [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
-         'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-         'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
-         'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
-         'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-         'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
-         'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-         'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
-         'hair drier', 'toothbrush' ]
 
     def infer(self, img):
         self.inputs[0]['host'] = np.ravel(img)
@@ -54,6 +58,40 @@ class BaseEngine(object):
 
         data = [out['host'] for out in self.outputs]
         return data
+    
+    def detect_video(self, video_path):
+        cap = cv2.VideoCapture(video_path)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            blob, ratio = preproc(frame, self.imgsz, self.mean, self.std)
+            data = self.infer(blob)
+            predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
+            dets = self.postprocess(predictions,ratio)
+            if dets is not None:
+                final_boxes, final_scores, final_cls_inds = dets[:,
+                                                                :4], dets[:, 4], dets[:, 5]
+                frame = vis(frame, final_boxes, final_scores, final_cls_inds,
+                                conf=0.5, class_names=self.class_names)
+            cv2.imshow('frame', frame)
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
+
+    def inference(self, img_path, conf=0.5):
+        origin_img = cv2.imread(img_path)
+        img, ratio = preproc(origin_img, self.imgsz, self.mean, self.std)
+        data = self.infer(img)
+        predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
+        dets = self.postprocess(predictions,ratio)
+        if dets is not None:
+            final_boxes, final_scores, final_cls_inds = dets[:,
+                                                             :4], dets[:, 4], dets[:, 5]
+            origin_img = vis(origin_img, final_boxes, final_scores, final_cls_inds,
+                             conf=conf, class_names=self.class_names)
+        return origin_img
 
     @staticmethod
     def postprocess(predictions, ratio):
@@ -67,6 +105,17 @@ class BaseEngine(object):
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=0.45, score_thr=0.1)
         return dets
+    
+    def get_fps(self):
+        # warmup
+        import time
+        img = np.ones((1,3,self.imgsz[0], self.imgsz[1]))
+        img = np.ascontiguousarray(img, dtype=np.float32)
+        for _ in range(20):
+            _ = self.infer(img)
+        t1 = time.perf_counter()
+        _ = self.infer(img)
+        print(1/(time.perf_counter() - t1), 'FPS')
 
 
 def nms(boxes, scores, nms_thr):

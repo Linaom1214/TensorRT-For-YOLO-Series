@@ -1,4 +1,16 @@
 # YOLOv6、 YOLOX、 YOLOV5、 TensorRT Python/C++ API 
+## Update 2022.7.3 support TRT int8  post-training quantization 
+
+
+##  Prepare TRT Python 
+
+```
+pip install --upgrade setuptools pip --user
+pip install nvidia-pyindex
+pip install --upgrade nvidia-tensorrt
+pip install pycuda
+```
+
 
 Here is a Python Demo mybe help you quickly understand this repo [Link](https://aistudio.baidu.com/aistudio/projectdetail/4263301?contributionType=1&shared=1)
 ## YOLOv6 [C++, Python Support]
@@ -24,7 +36,7 @@ python deploy/ONNX/export_onnx.py --weights yolov6s.pt --img 640 --batch 1
 ### 转化为TensorRT Engine 
 
 ```
-python export_trt.py -m onnx-name -o trt-name
+python export.py -o onnx-name -e trt-name -p fp32/16/int8
 ```
 ### 测试
 
@@ -73,7 +85,7 @@ python3 tools/export_onnx.py --output-name yolox_s.onnx -n yolox-s -c yolox_s.pt
 ```
 ### 转化为TensorRT Engine 
 ```
-python export_trt.py -m onnx-name -o trt-name
+python export.py -o onnx-name -e trt-name -p fp32/16/int8
 ```
 ### 测试
 
@@ -98,7 +110,7 @@ python path/to/export.py --weights yolov5s.pt --include  onnx
 ### 转化为TensorRT Engine 
 
 ```
-python export_trt.py -m onnx-name -o trt-name
+python export.py -o onnx-name -e trt-name -p fp32/16/int8
 ```
 ### 测试
 

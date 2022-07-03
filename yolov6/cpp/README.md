@@ -14,7 +14,7 @@ python deploy/ONNX/export_onnx.py --weights yolov6s.pt --img 640 --batch 1
 ### 转化为TensorRT Engine 
 
 ```
-python export_trt.py -m onnx-name -o trt-name
+python export.py -o onnx-name -e trt-name -p fp32/16/int8
 ```
 ### 测试
 

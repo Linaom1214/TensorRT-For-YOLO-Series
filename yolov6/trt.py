@@ -22,30 +22,13 @@ class Predictor(BaseEngine):
          'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
          'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
          'hair drier', 'toothbrush' ]
-    def inference(self, img_path):
-        origin_img = cv2.imread(img_path)
-        mean = None
-        std = None
-        img, ratio = preproc(origin_img, self.imgsz, mean, std)
-        data = self.infer(img)
-        predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
-        dets = self.postprocess(predictions,ratio)
-        # import pdb
-        # pdb.set_trace()
-        if dets is not None:
-            final_boxes, final_scores, final_cls_inds = dets[:,
-                                                             :4], dets[:, 4], dets[:, 5]
-            origin_img = vis(origin_img, final_boxes, final_scores, final_cls_inds,
-                             conf=0.5, class_names=self.class_names)
-
-        cv2.imwrite("%s_yolov6.jpg" % os.path.splitext(
-            os.path.split(img_path)[-1])[0], origin_img)
 
 
 if __name__ == '__main__':
     pred = Predictor(engine_path='yolov6.trt')
-    img_path = '../imgs/3.jpg'
-    for _ in range(5):
-        t1 = time.time()
-        pred.inference(img_path)
-        print((time.time() - t1)*1000)
+    img_path = '../src/3.jpg'
+    origin_img = pred.inference(img_path)
+    cv2.imwrite("%s_yolov6.jpg" % os.path.splitext(
+        os.path.split(img_path)[-1])[0], origin_img)
+    pred.detect_video('../src/video1.mp4')
+    pred.get_fps()

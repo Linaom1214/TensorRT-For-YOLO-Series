@@ -1,18 +1,67 @@
-# YOLOv6、 YOLOX、 YOLOV5、 TensorRT Python/C++ API 
-## Update 2022.7.3 support TRT int8  post-training quantization 
+# YOLO Series TensorRT Python/C++ 
 
+## Support
+YOLOv7、YOLOv6、 YOLOX、 YOLOV5、
 
-##  Prepare TRT Python 
+## Update 
+- 2022.7.8 support YOLOV7 
+- 2022.7.3 support TRT int8  post-training quantization 
 
+##  Prepare TRT Env 
+`Python`
 ```
 pip install --upgrade setuptools pip --user
 pip install nvidia-pyindex
 pip install --upgrade nvidia-tensorrt
 pip install pycuda
 ```
+`C++`
 
+[By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
+
+## Quick Start
 
 Here is a Python Demo mybe help you quickly understand this repo [Link](https://aistudio.baidu.com/aistudio/projectdetail/4263301?contributionType=1&shared=1)
+
+## YOLOv7 [C++, Python Support]
+
+![](yolov7/3_yolov7.jpg)
+
+```shell
+https://github.com/WongKinYiu/yolov7.git
+```
+修改代码:将 yolo.py 对应行修改如下：
+https://github.com/WongKinYiu/yolov7/blob/5f1b78ad614b45c5a98e7afdd295e20033d5ad3c/models/yolo.py#L57 
+
+```python
+return x if self.training else (torch.cat(z, 1), ) if not self.export else (torch.cat(z, 1), x)
+```
+
+### 导出onnx
+```shell
+python models/export.py --weights ../yolov7.pt --grid
+```
+
+### 转化为TensorRT Engine 
+
+```
+python export.py -o onnx-name -e trt-name -p fp32/16/int8
+```
+### 测试
+
+```
+cd yolov7
+python trt.py
+```
+
+### C++
+
+C++ [Demo](yolov7/cpp/README.md)
+
+
+
+
+
 ## YOLOv6 [C++, Python Support]
 
 | model |  input |  | FPS | Device | Language | 
@@ -22,7 +71,7 @@ Here is a Python Demo mybe help you quickly understand this repo [Link](https://
 | yolov6s     | 640*640     | FP32     | 330FPS | 1080Ti | C++ |
 | yolov6s     | 640*640     | FP32     | 300FPS | 1080Ti | Python |
 
-[bilibili](https://www.bilibili.com/video/BV1x3411w7T6?share_source=copy_web)
+[YOLOv6 bilibili](https://www.bilibili.com/video/BV1x3411w7T6?share_source=copy_web)
 
 ![](yolov6/3_yolov6.jpg)
 ```shell

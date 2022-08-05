@@ -3,28 +3,41 @@ import pycuda.autoinit
 import pycuda.driver as cuda
 import numpy as np
 import cv2
+import torch
+import time
 
 
 class BaseEngine(object):
-    def __init__(self, engine_path, imgsz=(640,640)):
+    def __init__(self, engine_path, efficientNMSPlugin=False, imgsz=(640, 640)):  # 初始化
+        self.efficientNMSPlugin = efficientNMSPlugin
         self.imgsz = imgsz
         self.mean = None
         self.std = None
         self.n_classes = 80
-        self.class_names = [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
-         'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-         'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
-         'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
-         'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-         'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
-         'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-         'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
-         'hair drier', 'toothbrush' ]
+        self.class_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
+                            'traffic light',
+                            'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse',
+                            'sheep', 'cow',
+                            'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
+                            'suitcase', 'frisbee',
+                            'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard',
+                            'surfboard',
+                            'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana',
+                            'apple',
+                            'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
+                            'couch',
+                            'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
+                            'keyboard', 'cell phone',
+                            'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
+                            'teddy bear',
+                            'hair drier', 'toothbrush']
 
         logger = trt.Logger(trt.Logger.WARNING)
+        trt.init_libnvinfer_plugins(logger, namespace="")
         runtime = trt.Runtime(logger)
         with open(engine_path, "rb") as f:
             serialized_engine = f.read()
+
         engine = runtime.deserialize_cuda_engine(serialized_engine)
         self.context = engine.create_execution_context()
         self.inputs, self.outputs, self.bindings = [], [], []
@@ -39,7 +52,6 @@ class BaseEngine(object):
                 self.inputs.append({'host': host_mem, 'device': device_mem})
             else:
                 self.outputs.append({'host': host_mem, 'device': device_mem})
-                
 
     def infer(self, img):
         self.inputs[0]['host'] = np.ravel(img)
@@ -58,25 +70,46 @@ class BaseEngine(object):
 
         data = [out['host'] for out in self.outputs]
         return data
-    
+
     def detect_video(self, video_path):
         cap = cv2.VideoCapture(video_path)
         while True:
+            preproc_start = time.perf_counter()
             ret, frame = cap.read()
             if not ret:
+                print("open video filed !")
                 break
-            blob, ratio = preproc(frame, self.imgsz, self.mean, self.std)
+
+            # warpAffine: Speed up preprocessing
+            img, ratio = align(frame, self.imgsz)  #
+            img = img / 255.0
+            img = img.transpose((2, 0, 1))
+            blob = np.ascontiguousarray(img, dtype=np.float32)
+
+            # blob, ratio = preproc(frame, self.imgsz, self.mean, self.std)
+
             data = self.infer(blob)
-            predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
-            dets = self.postprocess(predictions,ratio)
-            if dets is not None:
-                final_boxes, final_scores, final_cls_inds = dets[:,
-                                                                :4], dets[:, 4], dets[:, 5]
-                frame = vis(frame, final_boxes, final_scores, final_cls_inds,
-                                conf=0.5, class_names=self.class_names)
+
+            if self.efficientNMSPlugin:
+                nums, final_boxes, final_scores, final_cls_inds = data[0], torch.tensor(data[1]), data[2], data[3]
+                final_boxes = torch.reshape(final_boxes, (-1, 4))
+                final_boxes = final_boxes[:nums[0]]
+                final_boxes /= ratio
+                final_boxes.clip_(0, 6400).round().int()
+            else:
+                predictions = np.reshape(data, (1, -1, int(5 + self.n_classes)))[0]
+                dets = self.postprocess(predictions, ratio)
+                if dets is not None:
+                    final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
+
+            frame = vis(frame, final_boxes, final_scores, final_cls_inds, conf=0.5, class_names=self.class_names)
+
+            all_end = time.perf_counter()
+            print(1 / (all_end - preproc_start), 'FPS')
             cv2.imshow('frame', frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
+
         cap.release()
         cv2.destroyAllWindows()
 
@@ -84,13 +117,21 @@ class BaseEngine(object):
         origin_img = cv2.imread(img_path)
         img, ratio = preproc(origin_img, self.imgsz, self.mean, self.std)
         data = self.infer(img)
-        predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
-        dets = self.postprocess(predictions,ratio)
-        if dets is not None:
-            final_boxes, final_scores, final_cls_inds = dets[:,
-                                                             :4], dets[:, 4], dets[:, 5]
-            origin_img = vis(origin_img, final_boxes, final_scores, final_cls_inds,
-                             conf=conf, class_names=self.class_names)
+        if self.efficientNMSPlugin:
+            nums, final_boxes, final_scores, final_cls_inds = data[0], torch.tensor(data[1]), data[2], data[3]
+            final_boxes = torch.reshape(final_boxes, (-1, 4))
+            final_boxes = final_boxes[:nums[0]]
+            final_boxes /= ratio
+            final_boxes.clip_(0, 6400).round().int()
+        else:
+            predictions = np.reshape(data, (1, -1, int(5 + self.n_classes)))[0]
+            dets = self.postprocess(predictions, ratio)
+            if dets is not None:
+                final_boxes, final_scores, final_cls_inds = dets[:,
+                                                            :4], dets[:, 4], dets[:, 5]
+
+        origin_img = vis(origin_img, final_boxes, final_scores, final_cls_inds,
+                         conf=conf, class_names=self.class_names)
         return origin_img
 
     @staticmethod
@@ -105,17 +146,17 @@ class BaseEngine(object):
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=0.45, score_thr=0.1)
         return dets
-    
+
     def get_fps(self):
         # warmup
         import time
-        img = np.ones((1,3,self.imgsz[0], self.imgsz[1]))
+        img = np.ones((1, 3, self.imgsz[0], self.imgsz[1]))
         img = np.ascontiguousarray(img, dtype=np.float32)
         for _ in range(20):
             _ = self.infer(img)
         t1 = time.perf_counter()
         _ = self.infer(img)
-        print(1/(time.perf_counter() - t1), 'FPS')
+        print(1 / (time.perf_counter() - t1), 'FPS')
 
 
 def nms(boxes, scores, nms_thr):
@@ -185,16 +226,29 @@ def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
         interpolation=cv2.INTER_LINEAR,
     ).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
-
     padded_img = padded_img[:, :, ::-1]
     padded_img /= 255.0
     if mean is not None:
         padded_img -= mean
     if std is not None:
         padded_img /= std
+
     padded_img = padded_img.transpose(swap)
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
     return padded_img, r
+
+
+def align(image, dst_size=(640, 640)):
+    oh, ow = image.shape[:2]
+    dh, dw = dst_size
+    scale = min(dw / ow, dh / oh)
+
+    M = np.array([
+        [scale, 0, 0],
+        [0, scale, 0]
+    ])
+
+    return cv2.warpAffine(image, M, dst_size), scale
 
 
 _COLORS = np.array(

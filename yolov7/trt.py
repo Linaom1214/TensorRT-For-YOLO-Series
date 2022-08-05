@@ -9,8 +9,9 @@ import os
 
 
 class Predictor(BaseEngine):
-    def __init__(self, engine_path , imgsz=(640,640)):
-        super(Predictor, self).__init__(engine_path)
+    def __init__(self, engine_path, efficientNMSPlugin=False, imgsz=(640,640)):
+        super(Predictor, self).__init__(engine_path, efficientNMSPlugin)
+        self.efficientNMSPlugin = efficientNMSPlugin
         self.imgsz = imgsz
         self.n_classes = 80
         self.class_names = [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
@@ -25,7 +26,7 @@ class Predictor(BaseEngine):
 
 
 if __name__ == '__main__':
-    pred = Predictor(engine_path='../../yolov7-tiny.trt')
+    pred = Predictor(engine_path='./../yolov7-tiny-nms.trt', efficientNMSPlugin=True)  # efficientNMSPlugin only support yolov7
     img_path = '../src/3.jpg'
     origin_img = pred.inference(img_path, conf=0.3)
     cv2.imwrite("%s_yolov7.jpg" % os.path.splitext(

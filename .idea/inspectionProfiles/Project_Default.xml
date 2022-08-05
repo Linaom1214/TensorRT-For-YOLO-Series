@@ -1,0 +1,25 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="DuplicatedCode" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <Languages>
+        <language minSize="390" name="Python" />
+      </Languages>
+    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="7">
+            <item index="0" class="java.lang.String" itemvalue="thop" />
+            <item index="1" class="java.lang.String" itemvalue="onnxruntime" />
+            <item index="2" class="java.lang.String" itemvalue="onnxsim" />
+            <item index="3" class="java.lang.String" itemvalue="tensorboard" />
+            <item index="4" class="java.lang.String" itemvalue="opencv-python" />
+            <item index="5" class="java.lang.String" itemvalue="pycocotools" />
+            <item index="6" class="java.lang.String" itemvalue="addict" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

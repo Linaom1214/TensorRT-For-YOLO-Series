@@ -9,8 +9,9 @@ import os
 
 
 class Predictor(BaseEngine):
-    def __init__(self, engine_path , imgsz=(416,416)):
-        super(Predictor, self).__init__(engine_path)
+    def __init__(self, engine_path, efficientNMSPlugin=False,imgsz=(416,416)):
+        super(Predictor, self).__init__(engine_path,efficientNMSPlugin)
+        self.efficientNMSPlugin = efficientNMSPlugin
         self.imgsz = imgsz
         self.n_classes = 1
         self.class_names = ["gas_bottle"]

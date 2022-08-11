@@ -1,10 +1,12 @@
 # YOLO系列 TensorRT Python/C++ 
 
 ## 支持
-YOLOv7、YOLOv6、 YOLOX、 YOLOV5、
+YOLOv7、YOLOv6、 YOLOX、 YOLOV5
+
+Notice： **当前C++ demo 不支持端到端模型**
 
 ## 更新 
-- 2022.8.11 端到端导出支持, 更简洁的端到端导出方法
+- 2022.8.11 **端到端导出支持, 更简洁的端到端导出方法**
 - 2022.7.8 支持YOLOV7 
 - 2022.7.3 支持 TRT int8 post-training quantization 
 
@@ -20,7 +22,7 @@ pip install pycuda
 
 [By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
-## 快速上手
+## 快速上手 | 该版本模型不包含端到端
 
 这个python的demo可以帮助你快速的理解这个项目 [Link](https://aistudio.baidu.com/aistudio/projectdetail/4263301?contributionType=1&shared=1)
 
@@ -46,10 +48,12 @@ python models/export.py --weights ../yolov7.pt --grid
 ### 转化为TensorRT Engine 
 
 ```
-python export.py -o onnx-name -e trt-name -p fp32/16/int8
+python export.py -o onnx-name -e trt-name -p fp32/16/int8 --end2end
 ```
 ### 测试
 
+使用端到端模型时请修改代码
+`origin_img = pred.inference(img_path, conf=0.5, end2end=True)`
 ```
 cd yolov7
 python trt.py
@@ -86,7 +90,7 @@ python deploy/ONNX/export_onnx.py --weights yolov6s.pt --img 640 --batch 1
 ### 转化为TensorRT Engine 
 
 ```
-python export.py -o onnx-name -e trt-name -p fp32/16/int8
+python export.py -o onnx-name -e trt-name -p fp32/16/int8 --end2end
 ```
 ### 测试
 

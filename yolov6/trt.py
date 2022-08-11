@@ -25,10 +25,10 @@ class Predictor(BaseEngine):
 
 
 if __name__ == '__main__':
-    pred = Predictor(engine_path='yolov6.trt')
+    pred = Predictor(engine_path='yolov6-new.trt')
     img_path = '../src/3.jpg'
-    origin_img = pred.inference(img_path)
+    origin_img = pred.inference(img_path, conf=0.5, end2end=True)
     cv2.imwrite("%s_yolov6.jpg" % os.path.splitext(
         os.path.split(img_path)[-1])[0], origin_img)
-    pred.detect_video('../src/video1.mp4') # set 0 use a webcam
+    pred.detect_video('../src/video1.mp4', conf=0.5, end2end=False) # set 0 use a webcam
     pred.get_fps()

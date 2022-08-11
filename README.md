@@ -2,9 +2,12 @@
 ## [简体中文](README_CN.md)
 
 ## Support
-YOLOv7、YOLOv6、 YOLOX、 YOLOV5、
+YOLOv7、YOLOv6、 YOLOX、 YOLOV5
+
+The C++ code for YOLOv7/YOLOv6 also can be used for YOLOx or YOLOv5
 
 ## Update 
+- 2022.8.11 nms plugin support ==> more simple 
 - 2022.7.8 support YOLOV7 
 - 2022.7.3 support TRT int8  post-training quantization 
 
@@ -48,6 +51,9 @@ python models/export.py --weights ../yolov7.pt --grid
 
 ```
 python export.py -o onnx-name -e trt-name -p fp32/16/int8
+
+                                --end2end export the model include nms plugin
+
 ```
 ### Test
 
@@ -55,8 +61,13 @@ python export.py -o onnx-name -e trt-name -p fp32/16/int8
 cd yolov7
 python trt.py
 ```
+tips!
 
-### C++
+if you use the end2end model please modift the code as such
+
+`origin_img = pred.inference(img_path, conf=0.5, end2end=True)`
+
+### C++ [Now don't support end2end model]
 
 C++ [Demo](yolov7/cpp/README.md)
 
@@ -84,7 +95,7 @@ python deploy/ONNX/export_onnx.py --weights yolov6s.pt --img 640 --batch 1
 ### Convert to TensorRT Engine 
 
 ```
-python export.py -o onnx-name -e trt-name -p fp32/16/int8
+python export.py -o onnx-name -e trt-name -p fp32/16/int8 --end2end 
 ```
 ### Test
 
@@ -93,7 +104,7 @@ cd yolov6
 python trt.py
 ```
 
-### C++
+### C++ [Now don't support end2end model]
 
 C++ [Demo](yolov6/cpp/README.md)
 

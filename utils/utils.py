@@ -23,6 +23,7 @@ class BaseEngine(object):
 
         logger = trt.Logger(trt.Logger.WARNING)
         runtime = trt.Runtime(logger)
+        trt.init_libnvinfer_plugins(logger,'') # initialize TensorRT plugins
         with open(engine_path, "rb") as f:
             serialized_engine = f.read()
         engine = runtime.deserialize_cuda_engine(serialized_engine)
@@ -59,7 +60,7 @@ class BaseEngine(object):
         data = [out['host'] for out in self.outputs]
         return data
     
-    def detect_video(self, video_path):
+    def detect_video(self, video_path, conf=0.5, end2end=False):
         cap = cv2.VideoCapture(video_path)
         while True:
             ret, frame = cap.read()
@@ -67,25 +68,37 @@ class BaseEngine(object):
                 break
             blob, ratio = preproc(frame, self.imgsz, self.mean, self.std)
             data = self.infer(blob)
-            predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
-            dets = self.postprocess(predictions,ratio)
+            if end2end:
+                num, final_boxes, final_scores, final_cls_inds = data
+                final_boxes = np.reshape(final_boxes/ratio, (-1, 4))
+                dets = np.concatenate([final_boxes[:num[0]], np.array(final_scores)[:num[0]].reshape(-1, 1), np.array(final_cls_inds)[:num[0]].reshape(-1, 1)], axis=-1)
+            else:
+                predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
+                dets = self.postprocess(predictions,ratio)
+
             if dets is not None:
                 final_boxes, final_scores, final_cls_inds = dets[:,
                                                                 :4], dets[:, 4], dets[:, 5]
                 frame = vis(frame, final_boxes, final_scores, final_cls_inds,
-                                conf=0.5, class_names=self.class_names)
-            cv2.imshow('frame', frame)
+                                conf=conf, class_names=self.class_names)
+                cv2.imshow('frame', frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
         cap.release()
         cv2.destroyAllWindows()
 
-    def inference(self, img_path, conf=0.5):
+    def inference(self, img_path, conf=0.5, end2end=False):
         origin_img = cv2.imread(img_path)
         img, ratio = preproc(origin_img, self.imgsz, self.mean, self.std)
         data = self.infer(img)
-        predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
-        dets = self.postprocess(predictions,ratio)
+        if end2end:
+            num, final_boxes, final_scores, final_cls_inds = data
+            final_boxes = np.reshape(final_boxes/ratio, (-1, 4))
+            dets = np.concatenate([final_boxes[:num[0]], np.array(final_scores)[:num[0]].reshape(-1, 1), np.array(final_cls_inds)[:num[0]].reshape(-1, 1)], axis=-1)
+        else:
+            predictions = np.reshape(data, (1, -1, int(5+self.n_classes)))[0]
+            dets = self.postprocess(predictions,ratio)
+
         if dets is not None:
             final_boxes, final_scores, final_cls_inds = dets[:,
                                                              :4], dets[:, 4], dets[:, 5]

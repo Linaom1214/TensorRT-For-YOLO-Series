@@ -112,7 +112,7 @@ class EngineBuilder:
         self.network = None
         self.parser = None
 
-    def create_network(self, onnx_path):
+    def create_network(self, onnx_path, end2end, conf_thres, iou_thres, max_det):
         """
         Parse the ONNX graph and create the corresponding TensorRT network definition.
         :param onnx_path: The path to the ONNX graph to load.
@@ -141,6 +141,61 @@ class EngineBuilder:
             print("Output '{}' with shape {} and dtype {}".format(output.name, output.shape, output.dtype))
         assert self.batch_size > 0
         self.builder.max_batch_size = self.batch_size
+
+        if end2end:
+            previous_output = self.network.get_output(0)
+            self.network.unmark_output(previous_output)
+            # output [1, 8400, 85]
+            # slice boxes, obj_score, class_scores
+            strides = trt.Dims([1,1,1])
+            starts = trt.Dims([0,0,0])
+            bs, num_boxes, temp = previous_output.shape
+            shapes = trt.Dims([bs, num_boxes, 4])
+            # [0, 0, 0] [1, 8400, 4] [1, 1, 1]
+            boxes = self.network.add_slice(previous_output, starts, shapes, strides)
+            num_classes = temp -5 
+            starts[2] = 4
+            shapes[2] = 1
+            # [0, 0, 4] [1, 8400, 1] [1, 1, 1]
+            obj_score = self.network.add_slice(previous_output, starts, shapes, strides)
+            starts[2] = 5
+            shapes[2] = num_classes
+            # [0, 0, 5] [1, 8400, 80] [1, 1, 1]
+            scores = self.network.add_slice(previous_output, starts, shapes, strides)
+            # scores = obj_score * class_scores => [bs, num_boxes, nc]
+            updated_scores = self.network.add_elementwise(obj_score.get_output(0), scores.get_output(0), trt.ElementWiseOperation.PROD)
+
+            '''
+            "plugin_version": "1",
+            "background_class": -1,  # no background class
+            "max_output_boxes": detections_per_img,
+            "score_threshold": score_thresh,
+            "iou_threshold": nms_thresh,
+            "score_activation": False,
+            "box_coding": 1,
+            '''
+            registry = trt.get_plugin_registry()
+            assert(registry)
+            creator = registry.get_plugin_creator("EfficientNMS_TRT", "1")
+            assert(creator)
+            fc = []
+            fc.append(trt.PluginField("background_class", np.array([-1], dtype=np.int32), trt.PluginFieldType.INT32))
+            fc.append(trt.PluginField("max_output_boxes", np.array([max_det], dtype=np.int32), trt.PluginFieldType.INT32))
+            fc.append(trt.PluginField("score_threshold", np.array([conf_thres], dtype=np.float32), trt.PluginFieldType.FLOAT32))
+            fc.append(trt.PluginField("iou_threshold", np.array([iou_thres], dtype=np.float32), trt.PluginFieldType.FLOAT32))
+            fc.append(trt.PluginField("box_coding", np.array([1], dtype=np.int32), trt.PluginFieldType.INT32))
+            
+            fc = trt.PluginFieldCollection(fc) 
+            nms_layer = creator.create_plugin("nms_layer", fc)
+
+            layer = self.network.add_plugin_v2([boxes.get_output(0), updated_scores.get_output(0)], nms_layer)
+            layer.get_output(0).name = "num"
+            layer.get_output(1).name = "boxes"
+            layer.get_output(2).name = "scores"
+            layer.get_output(3).name = "classes"
+            for i in range(4):
+                self.network.mark_output(layer.get_output(i))
+
 
     def create_engine(self, engine_path, precision, calib_input=None, calib_cache=None, calib_num_images=5000,
                       calib_batch_size=8):
@@ -176,7 +231,8 @@ class EngineBuilder:
                     # Also enable fp16, as some layers may be even more efficient in fp16 than int8
                     self.config.set_flag(trt.BuilderFlag.FP16)
                 self.config.set_flag(trt.BuilderFlag.INT8)
-                self.config.int8_calibrator = EngineCalibrator(calib_cache)
+                # self.config.int8_calibrator = EngineCalibrator(calib_cache)
+                self.config.int8_calibrator = SwinCalibrator(calib_cache)
                 if not os.path.exists(calib_cache):
                     calib_shape = [calib_batch_size] + list(inputs[0].shape[1:])
                     calib_dtype = trt.nptype(inputs[0].dtype)
@@ -190,7 +246,7 @@ class EngineBuilder:
 
 def main(args):
     builder = EngineBuilder(args.verbose, args.workspace)
-    builder.create_network(args.onnx)
+    builder.create_network(args.onnx, args.end2end, args.conf_thres, args.iou_thres, args.max_det)
     builder.create_engine(args.engine, args.precision, args.calib_input, args.calib_cache, args.calib_num_images,
                           args.calib_batch_size)
 
@@ -210,7 +266,17 @@ if __name__ == "__main__":
                         help="The maximum number of images to use for calibration, default: 5000")
     parser.add_argument("--calib_batch_size", default=8, type=int,
                         help="The batch size for the calibration process, default: 8")
+    parser.add_argument("--end2end", default=False, action="store_true",
+                        help="export the engine include nms plugin, default: False")
+    parser.add_argument("--conf_thres", default=0.4, type=float,
+                        help="The conf threshold for the nms, default: 0.4")
+    parser.add_argument("--iou_thres", default=0.5, type=float,
+                        help="The iou threshold for the nms, default: 0.5")
+    parser.add_argument("--max_det", default=100, type=int,
+                        help="The total num for results, default: 100")
+
     args = parser.parse_args()
+    print(args)
     if not all([args.onnx, args.engine]):
         parser.print_help()
         log.error("These arguments are required: --onnx and --engine")
@@ -219,6 +285,7 @@ if __name__ == "__main__":
         parser.print_help()
         log.error("When building in int8 precision, --calib_input or an existing --calib_cache file is required")
         sys.exit(1)
+    
     main(args)
 
 

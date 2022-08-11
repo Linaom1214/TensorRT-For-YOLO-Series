@@ -4,6 +4,7 @@
 YOLOv7、YOLOv6、 YOLOX、 YOLOV5、
 
 ## 更新 
+- 2022.8.11 端到端导出支持, 更简洁的端到端导出方法
 - 2022.7.8 支持YOLOV7 
 - 2022.7.3 支持 TRT int8 post-training quantization 
 

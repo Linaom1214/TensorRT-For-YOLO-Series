@@ -7,7 +7,7 @@ YOLOv7、YOLOv6、 YOLOX、 YOLOV5
 The C++ code for YOLOv7/YOLOv6 also can be used for YOLOx or YOLOv5
 
 ## Update 
-- 2022.8.11 nms plugin support ==> more simple 
+- 2022.8.11 nms plugin support ==> Now you can set --end2end flag while use `export.py` get a engine file  
 - 2022.7.8 support YOLOV7 
 - 2022.7.3 support TRT int8  post-training quantization 
 

@@ -27,7 +27,7 @@ pip install pycuda
 
 ### Python
 
-文件 `Examples.ipynb` 中提供了详细的Demo
+文件 `Examples.ipynb` 中提供了详细的Demo <a href="https://github.com/Linaom1214/TensorRT-For-YOLO-Series/blob/main/Examples.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Jupyter Notebook"></a>
 
 ### C++ 
 

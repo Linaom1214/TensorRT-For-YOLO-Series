@@ -34,6 +34,15 @@ show in `Examples.ipynb` <a href="https://github.com/Linaom1214/TensorRT-For-YOL
 
 Now C++ don`t support model with nms plugin
 
+Edit code 
+```c++
+static const int INPUT_W = 640;
+static const int INPUT_H = 640;
+const char* INPUT_BLOB_NAME = "image_arrays";
+const char* OUTPUT_BLOB_NAME = "outputs";
+```
+
+
 ```shell
 cd cpp && mkdir build && build
 cmake ..

@@ -5,7 +5,7 @@
 YOLOv7、YOLOv6、 YOLOX、 YOLOV5
 
 ## Update 
-- 2022.8.13 rename reop public new version
+- 2022.8.13 rename reop、 public new version、 **C++ for end2end**
 - 2022.8.11 nms plugin support ==> Now you can set --end2end flag while use `export.py` get a engine file  
 - 2022.7.8 support YOLOV7 
 - 2022.7.3 support TRT int8  post-training quantization 
@@ -32,23 +32,10 @@ show in `Examples.ipynb` <a href="https://github.com/Linaom1214/TensorRT-For-YOL
 
 ### C++ 
 
-Now C++ don`t support model with nms plugin
-
-Edit code 
-```c++
-static const int INPUT_W = 640;
-static const int INPUT_H = 640;
-const char* INPUT_BLOB_NAME = "image_arrays";
-const char* OUTPUT_BLOB_NAME = "outputs";
-```
+support **NMS plugin**
+show in [C++ Demo](cpp/README.MD)
 
 
-```shell
-cd cpp && mkdir build && build
-cmake ..
-make
-./yolo ../model_trt.engine -i ../*.jpg
-```
 
 ## Old version
 [v0.0.1](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/releases/tag/v0.0.1)

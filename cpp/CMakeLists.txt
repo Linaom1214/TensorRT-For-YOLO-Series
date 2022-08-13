@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-project(yolov7)
+project(yolo)
 
 add_definitions(-std=c++11)
 
@@ -24,9 +24,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Ofast -Wfatal-errors -
 find_package(OpenCV)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_executable(yolov7 ${PROJECT_SOURCE_DIR}/yolov7.cpp)
-target_link_libraries(yolov7 nvinfer)
-target_link_libraries(yolov7 cudart)
-target_link_libraries(yolov7 ${OpenCV_LIBS})
+add_executable(yolo ${PROJECT_SOURCE_DIR}/main.cpp yolo.hpp)
+target_link_libraries(yolo nvinfer)
+target_link_libraries(yolo cudart)
+target_link_libraries(yolo ${OpenCV_LIBS})
 
 add_definitions(-O2 -pthread)

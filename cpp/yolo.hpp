@@ -26,25 +26,7 @@
 #define BBOX_CONF_THRESH 0.2
 
 using namespace nvinfer1;
-
-// stuff we know about the network and the input/output blobs
-static const int INPUT_W = 640;
-static const int INPUT_H = 640;
-const char* INPUT_BLOB_NAME = "image_arrays";
-const char* OUTPUT_BLOB_NAME = "outputs";
 static Logger gLogger;
-
-
-cv::Mat static_resize(cv::Mat& img) {
-    float r = std::min(INPUT_W / (img.cols*1.0), INPUT_H / (img.rows*1.0));
-    int unpad_w = r * img.cols;
-    int unpad_h = r * img.rows;
-    cv::Mat re(unpad_h, unpad_w, CV_8UC3);
-    cv::resize(img, re, re.size());
-    cv::Mat out(INPUT_W, INPUT_H, CV_8UC3, cv::Scalar(114, 114, 114));
-    re.copyTo(out(cv::Rect(0, 0, re.cols, re.rows)));
-    return out;
-}
 
 struct Object
 {
@@ -52,13 +34,6 @@ struct Object
     int label;
     float prob;
 };
-
-
-static inline float intersection_area(const Object& a, const Object& b)
-{
-    cv::Rect_<float> inter = a.rect & b.rect;
-    return inter.area();
-}
 
 static void qsort_descent_inplace(std::vector<Object>& faceobjects, int left, int right)
 {
@@ -95,6 +70,12 @@ static void qsort_descent_inplace(std::vector<Object>& faceobjects, int left, in
             if (i < right) qsort_descent_inplace(faceobjects, i, right);
         }
     }
+}
+
+static inline float intersection_area(const Object& a, const Object& b)
+{
+    cv::Rect_<float> inter = a.rect & b.rect;
+    return inter.area();
 }
 
 static void qsort_descent_inplace(std::vector<Object>& objects)
@@ -139,7 +120,6 @@ static void nms_sorted_bboxes(const std::vector<Object>& faceobjects, std::vecto
     }
 }
 
-
 static void generate_yolo_proposals(float* feat_blob, int output_size, float prob_threshold, std::vector<Object>& objects)
 {
     const int num_class = 80;
@@ -176,28 +156,6 @@ static void generate_yolo_proposals(float* feat_blob, int output_size, float pro
     }
 
 }
-
-float* blobFromImage(cv::Mat& img){
-    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
-
-    float* blob = new float[img.total()*3];
-    int channels = 3;
-    int img_h = img.rows;
-    int img_w = img.cols;
-    for (size_t c = 0; c < channels; c++) 
-    {
-        for (size_t  h = 0; h < img_h; h++) 
-        {
-            for (size_t w = 0; w < img_w; w++) 
-            {
-                blob[c * img_w * img_h + h * img_w + w] =
-                    (((float)img.at<cv::Vec3b>(h, w)[c]) / 255.0f);
-            }
-        }
-    }
-    return blob;
-}
-
 
 static void decode_outputs(float* prob, int output_size, std::vector<Object>& objects, float scale, const int img_w, const int img_h) {
         std::vector<Object> proposals;
@@ -387,7 +345,128 @@ static void draw_objects(const cv::Mat& bgr, const std::vector<Object>& objects,
 }
 
 
-void doInference(IExecutionContext& context, float* input, float* output, const int output_size, cv::Size input_shape) {
+class YOLO
+{
+    public:
+        YOLO(std::string engine_file_path);
+        virtual ~YOLO();
+        void detect_img(std::string image_path);
+        void detect_video(std::string video_path);
+        cv::Mat static_resize(cv::Mat& img);
+        float* blobFromImage(cv::Mat& img);
+        void doInference(IExecutionContext& context, float* input, float* output, const int output_size, cv::Size input_shape);
+
+    private:
+        static const int INPUT_W = 640;
+        static const int INPUT_H = 640;
+        const char* INPUT_BLOB_NAME = "image_arrays";
+        const char* OUTPUT_BLOB_NAME = "outputs";
+        float* prob;
+        int output_size = 1;
+        ICudaEngine* engine;
+        IRuntime* runtime;
+        IExecutionContext* context;
+
+};
+
+YOLO::YOLO(std::string engine_file_path)
+{
+    size_t size{0};
+    char *trtModelStream{nullptr};
+    
+    std::ifstream file(engine_file_path, std::ios::binary);
+    if (file.good()) {
+        file.seekg(0, file.end);
+        size = file.tellg();
+        file.seekg(0, file.beg);
+        trtModelStream = new char[size];
+        assert(trtModelStream);
+        file.read(trtModelStream, size);
+        file.close();
+    }
+    std::cout << "engine init finished" << std::endl;
+
+    runtime = createInferRuntime(gLogger);
+    assert(runtime != nullptr);
+    engine = runtime->deserializeCudaEngine(trtModelStream, size);
+    assert(engine != nullptr); 
+    context = engine->createExecutionContext();
+    assert(context != nullptr);
+    delete[] trtModelStream;
+    auto out_dims = engine->getBindingDimensions(1);
+    for(int j=0;j<out_dims.nbDims;j++) {
+        this->output_size *= out_dims.d[j];
+    }
+    this->prob = new float[this->output_size];
+}
+
+YOLO::~YOLO()
+{
+    std::cout<<"yolo destroy"<<std::endl;
+    this->context->destroy();
+    this->engine->destroy();
+    this->runtime->destroy();
+    
+}
+
+void YOLO::detect_img(std::string image_path)
+{
+    cv::Mat img = cv::imread(image_path);
+    int img_w = img.cols;
+    int img_h = img.rows;
+    cv::Mat pr_img = this->static_resize(img);
+    std::cout << "blob image" << std::endl;
+
+    float* blob;
+    blob = blobFromImage(pr_img);
+    float scale = std::min(this->INPUT_W / (img.cols*1.0), this->INPUT_H / (img.rows*1.0));
+
+    // run inference
+    auto start = std::chrono::system_clock::now();
+    doInference(*context, blob, this->prob, output_size, pr_img.size());
+    auto end = std::chrono::system_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+
+    std::vector<Object> objects;
+    decode_outputs(this->prob, this->output_size, objects, scale, img_w, img_h);
+    draw_objects(img, objects, image_path);
+    delete blob;
+
+}
+
+cv::Mat YOLO::static_resize(cv::Mat& img) {
+    float r = std::min(this->INPUT_W / (img.cols*1.0), INPUT_H / (img.rows*1.0));
+    int unpad_w = r * img.cols;
+    int unpad_h = r * img.rows;
+    cv::Mat re(unpad_h, unpad_w, CV_8UC3);
+    cv::resize(img, re, re.size());
+    cv::Mat out(this->INPUT_W, this->INPUT_H, CV_8UC3, cv::Scalar(114, 114, 114));
+    re.copyTo(out(cv::Rect(0, 0, re.cols, re.rows)));
+    return out;
+}
+
+float* YOLO::blobFromImage(cv::Mat& img){
+    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
+
+    float* blob = new float[img.total()*3];
+    int channels = 3;
+    int img_h = img.rows;
+    int img_w = img.cols;
+    for (size_t c = 0; c < channels; c++) 
+    {
+        for (size_t  h = 0; h < img_h; h++) 
+        {
+            for (size_t w = 0; w < img_w; w++) 
+            {
+                blob[c * img_w * img_h + h * img_w + w] =
+                    (((float)img.at<cv::Vec3b>(h, w)[c]) / 255.0f);
+            }
+        }
+    }
+    return blob;
+}
+
+void YOLO::doInference(IExecutionContext& context, float* input, float* output, const int output_size, cv::Size input_shape) {
     const ICudaEngine& engine = context.getEngine();
 
     // Pointers to input and output device buffers to pass to engine.
@@ -423,77 +502,3 @@ void doInference(IExecutionContext& context, float* input, float* output, const 
     CHECK(cudaFree(buffers[inputIndex]));
     CHECK(cudaFree(buffers[outputIndex]));
 }
-
-int main(int argc, char** argv) {
-    cudaSetDevice(DEVICE);
-    // create a model using the API directly and serialize it to a stream
-    char *trtModelStream{nullptr};
-    size_t size{0};
-
-    if (argc == 4 && std::string(argv[2]) == "-i") {
-        const std::string engine_file_path {argv[1]};
-        std::ifstream file(engine_file_path, std::ios::binary);
-        if (file.good()) {
-            file.seekg(0, file.end);
-            size = file.tellg();
-            file.seekg(0, file.beg);
-            trtModelStream = new char[size];
-            assert(trtModelStream);
-            file.read(trtModelStream, size);
-            file.close();
-        }
-    } else {
-        std::cerr << "arguments not right!" << std::endl;
-        std::cerr << "./yolov6 ../model_trt.engine -i ../*.jpg  // deserialize file and run inference" << std::endl;
-        return -1;
-    }
-    const std::string input_image_path {argv[3]};
-
-    //std::vector<std::string> file_names;
-    //if (read_files_in_dir(argv[2], file_names) < 0) {
-        //std::cout << "read_files_in_dir failed." << std::endl;
-        //return -1;
-    //}
-
-    IRuntime* runtime = createInferRuntime(gLogger);
-    assert(runtime != nullptr);
-    ICudaEngine* engine = runtime->deserializeCudaEngine(trtModelStream, size);
-    assert(engine != nullptr); 
-    IExecutionContext* context = engine->createExecutionContext();
-    assert(context != nullptr);
-    delete[] trtModelStream;
-    auto out_dims = engine->getBindingDimensions(1);
-    auto output_size = 1;
-    for(int j=0;j<out_dims.nbDims;j++) {
-        output_size *= out_dims.d[j];
-    }
-    static float* prob = new float[output_size];
-
-    cv::Mat img = cv::imread(input_image_path);
-    int img_w = img.cols;
-    int img_h = img.rows;
-    cv::Mat pr_img = static_resize(img);
-    std::cout << "blob image" << std::endl;
-
-    float* blob;
-    blob = blobFromImage(pr_img);
-    float scale = std::min(INPUT_W / (img.cols*1.0), INPUT_H / (img.rows*1.0));
-
-    // run inference
-    auto start = std::chrono::system_clock::now();
-    doInference(*context, blob, prob, output_size, pr_img.size());
-    auto end = std::chrono::system_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-
-    std::vector<Object> objects;
-    decode_outputs(prob, output_size, objects, scale, img_w, img_h);
-    draw_objects(img, objects, input_image_path);
-    // delete the pointer to the float
-    delete blob;
-    // destroy the engine
-    context->destroy();
-    engine->destroy();
-    runtime->destroy();
-    return 0;
-}
-

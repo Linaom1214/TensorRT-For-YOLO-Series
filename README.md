@@ -27,7 +27,8 @@ pip install pycuda
 
 ### Python
 
-show in `Examples.ipynb`
+show in `Examples.ipynb` <a href="https://github.com/Linaom1214/TensorRT-For-YOLO-Series/blob/main/Examples.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
+
 
 ### C++ 
 
@@ -39,4 +40,10 @@ cmake ..
 make
 ./yolo ../model_trt.engine -i ../*.jpg
 ```
+
+## Old version
+[v0.0.1](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/releases/tag/v0.0.1)
+[v0.0.2](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/releases/tag/v0.0.2)
+
+
 

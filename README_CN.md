@@ -31,10 +31,5 @@ pip install pycuda
 
 ### C++ 
 
-当前C++仅支持不包含NMS插件的模型
-
-```shell
-cd cpp && mkdir build && build
-cmake ..
-make
-```
+~当前C++仅支持不包含NMS插件的模型~
+[C++ Demo](cpp/README.MD)

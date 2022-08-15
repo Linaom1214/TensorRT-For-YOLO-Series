@@ -3,7 +3,7 @@
 ## 支持
 YOLOv7、YOLOv6、 YOLOX、 YOLOV5
 
-Notice： **当前C++ demo 不支持端到端模型**
+~Notice： **当前C++ demo 不支持端到端模型**~
 
 ## 更新 
 - 2022.8.13 **重构仓库**

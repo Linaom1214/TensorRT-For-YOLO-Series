@@ -337,20 +337,18 @@ int main(int argc, char** argv) {
     int* BboxNum = new int[1];
     int* ClassIndexs = new int[1000];
     Yolo yolo(model_path);
-    clock_t startTime, endTime;
-    int num = 0;
-    double total_time = 0;
     cv::Mat img;
-    while (num != 1000) {
-      startTime = clock();
-      img = cv::imread(image_path);
+    img = cv::imread(image_path);
+    // warmup 
+    for (int num =0; num < 10; num++) {
       yolo.Infer(img.cols, img.rows, img.channels(), img.data, Boxes, ClassIndexs, BboxNum);
-      endTime = clock();
-      double cur_timae = (double)(endTime - startTime) / CLOCKS_PER_SEC;
-      total_time += cur_timae;
-      num += 1;
     }
-    cout << "The run time is:" << total_time / 1000 << "s" << endl;
+    // run inference
+    auto start = std::chrono::system_clock::now();
+    yolo.Infer(img.cols, img.rows, img.channels(), img.data, Boxes, ClassIndexs, BboxNum);
+    auto end = std::chrono::system_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+
     yolo.draw_objects(img, Boxes, ClassIndexs, BboxNum);
 
   } else {

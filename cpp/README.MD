@@ -3,8 +3,6 @@
 **Edit code for you model**
 
 ```c++
-const cv::Size& new_shape = cv::Size(640, 640),
-static const int INPUT_H = 640;
 auto in_dims = engine->getBindingDimensions(engine->getBindingIndex("image_arrays"));
 ```
 **run**

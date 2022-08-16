@@ -62,12 +62,23 @@ class BaseEngine(object):
     
     def detect_video(self, video_path, conf=0.5, end2end=False):
         cap = cv2.VideoCapture(video_path)
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fps = int(round(cap.get(cv2.CAP_PROP_FPS)))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out = cv2.VideoWriter('results.avi',fourcc,fps,(width,height))
+        fps = 0
+        import time
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
             blob, ratio = preproc(frame, self.imgsz, self.mean, self.std)
+            t1 = time.time()
             data = self.infer(blob)
+            fps = (fps + (1. / (time.time() - t1))) / 2
+            frame = cv2.putText(frame, "FPS:%d " %fps, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                (0, 0, 255), 2)
             if end2end:
                 num, final_boxes, final_scores, final_cls_inds = data
                 final_boxes = np.reshape(final_boxes/ratio, (-1, 4))
@@ -81,9 +92,11 @@ class BaseEngine(object):
                                                                 :4], dets[:, 4], dets[:, 5]
                 frame = vis(frame, final_boxes, final_scores, final_cls_inds,
                                 conf=conf, class_names=self.class_names)
-                cv2.imshow('frame', frame)
+            cv2.imshow('frame', frame)
+            out.write(frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
+        out.release()
         cap.release()
         cv2.destroyAllWindows()
 

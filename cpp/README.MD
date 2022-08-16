@@ -1,6 +1,6 @@
 ## With NMS Plugin
 
-**Edit code for you model**
+**Edit code for your model**
 
 ```c++
 auto in_dims = engine->getBindingDimensions(engine->getBindingIndex("image_arrays"));
@@ -17,7 +17,7 @@ make
 
 ## Without NMS Plugin
 
-**Edit code for you model**
+**Edit code for your model**
 
 ```c++
 static const int INPUT_W = 640;

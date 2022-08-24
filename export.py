@@ -231,8 +231,7 @@ class EngineBuilder:
                     # Also enable fp16, as some layers may be even more efficient in fp16 than int8
                     self.config.set_flag(trt.BuilderFlag.FP16)
                 self.config.set_flag(trt.BuilderFlag.INT8)
-                # self.config.int8_calibrator = EngineCalibrator(calib_cache)
-                self.config.int8_calibrator = SwinCalibrator(calib_cache)
+                self.config.int8_calibrator = EngineCalibrator(calib_cache)
                 if not os.path.exists(calib_cache):
                     calib_shape = [calib_batch_size] + list(inputs[0].shape[1:])
                     calib_dtype = trt.nptype(inputs[0].dtype)

@@ -151,7 +151,7 @@ class ImageBatcher:
             sys.exit(1)
         if self.format == "NCHW":
             image = np.transpose(image, (2, 0, 1))
-        return image, scale
+        return image/255., scale
 
     def get_batch(self):
         """

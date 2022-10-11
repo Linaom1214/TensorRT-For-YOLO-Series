@@ -2,7 +2,7 @@
 ## [简体中文](README_CN.md)
 
 ## Support
-YOLOv7、YOLOv6、 YOLOX、 YOLOV5
+[YOLOv7](https://github.com/WongKinYiu/yolov7)、[YOLOv6](https://github.com/meituan/YOLOv6)、 [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX)、 [YOLOV5](https://github.com/ultralytics/yolov5)、[YOLOv3](https://github.com/ultralytics/yolov3)
 
 ## Update 
 - 2022.8.13 rename reop、 public new version、 **C++ for end2end**

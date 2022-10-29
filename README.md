@@ -36,6 +36,18 @@ support **NMS plugin**
 show in [C++ Demo](cpp/README.MD)
 
 
+## Citing 
+
+If you use this repo in your publication, please cite it by using the following BibTeX entry.
+
+```bibtex
+@Misc{yolotrt2022,
+  author =       {Jian Lin},
+  title =        {YOLOTRT: tensorrt for yolo series, nms plugin support},
+  howpublished = {\url{[https://github.com/Linaom1214/TensorRT-For-YOLO-Series]}},
+  year =         {2022}
+}
+```
 
 ## Old version
 [v0.0.1](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/releases/tag/v0.0.1)

@@ -22,6 +22,7 @@ class BaseEngine(object):
          'hair drier', 'toothbrush' ]
 
         logger = trt.Logger(trt.Logger.WARNING)
+        logger.min_severity = trt.Logger.Severity.ERROR
         runtime = trt.Runtime(logger)
         trt.init_libnvinfer_plugins(logger,'') # initialize TensorRT plugins
         with open(engine_path, "rb") as f:

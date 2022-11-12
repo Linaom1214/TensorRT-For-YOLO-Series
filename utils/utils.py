@@ -27,6 +27,7 @@ class BaseEngine(object):
         with open(engine_path, "rb") as f:
             serialized_engine = f.read()
         engine = runtime.deserialize_cuda_engine(serialized_engine)
+        self.imgsz = engine.get_binding_shape(0)[2:]  # get the read shape of model, in case user input it wrong
         self.context = engine.create_execution_context()
         self.inputs, self.outputs, self.bindings = [], [], []
         self.stream = cuda.Stream()
@@ -40,7 +41,7 @@ class BaseEngine(object):
                 self.inputs.append({'host': host_mem, 'device': device_mem})
             else:
                 self.outputs.append({'host': host_mem, 'device': device_mem})
-                
+
 
     def infer(self, img):
         self.inputs[0]['host'] = np.ravel(img)
@@ -59,7 +60,7 @@ class BaseEngine(object):
 
         data = [out['host'] for out in self.outputs]
         return data
-    
+
     def detect_video(self, video_path, conf=0.5, end2end=False):
         cap = cv2.VideoCapture(video_path)
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -131,17 +132,18 @@ class BaseEngine(object):
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=0.45, score_thr=0.1)
         return dets
-    
+
     def get_fps(self):
-        # warmup
         import time
         img = np.ones((1,3,self.imgsz[0], self.imgsz[1]))
         img = np.ascontiguousarray(img, dtype=np.float32)
-        for _ in range(20):
+        for _ in range(5):  # warmup
             _ = self.infer(img)
-        t1 = time.perf_counter()
-        _ = self.infer(img)
-        print(1/(time.perf_counter() - t1), 'FPS')
+
+        t0 = time.perf_counter()
+        for _ in range(100):  # calculate average time
+            _ = self.infer(img)
+        print(100/(time.perf_counter() - t0), 'FPS')
 
 
 def nms(boxes, scores, nms_thr):
@@ -211,7 +213,7 @@ def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
         interpolation=cv2.INTER_LINEAR,
     ).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
-    # if use yolox set 
+    # if use yolox set
     # padded_img = padded_img[:, :, ::-1]
     # padded_img /= 255.0
     padded_img = padded_img[:, :, ::-1]
@@ -225,90 +227,19 @@ def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
     return padded_img, r
 
 
-_COLORS = np.array(
-    [
-        0.000, 0.447, 0.741,
-        0.850, 0.325, 0.098,
-        0.929, 0.694, 0.125,
-        0.494, 0.184, 0.556,
-        0.466, 0.674, 0.188,
-        0.301, 0.745, 0.933,
-        0.635, 0.078, 0.184,
-        0.300, 0.300, 0.300,
-        0.600, 0.600, 0.600,
-        1.000, 0.000, 0.000,
-        1.000, 0.500, 0.000,
-        0.749, 0.749, 0.000,
-        0.000, 1.000, 0.000,
-        0.000, 0.000, 1.000,
-        0.667, 0.000, 1.000,
-        0.333, 0.333, 0.000,
-        0.333, 0.667, 0.000,
-        0.333, 1.000, 0.000,
-        0.667, 0.333, 0.000,
-        0.667, 0.667, 0.000,
-        0.667, 1.000, 0.000,
-        1.000, 0.333, 0.000,
-        1.000, 0.667, 0.000,
-        1.000, 1.000, 0.000,
-        0.000, 0.333, 0.500,
-        0.000, 0.667, 0.500,
-        0.000, 1.000, 0.500,
-        0.333, 0.000, 0.500,
-        0.333, 0.333, 0.500,
-        0.333, 0.667, 0.500,
-        0.333, 1.000, 0.500,
-        0.667, 0.000, 0.500,
-        0.667, 0.333, 0.500,
-        0.667, 0.667, 0.500,
-        0.667, 1.000, 0.500,
-        1.000, 0.000, 0.500,
-        1.000, 0.333, 0.500,
-        1.000, 0.667, 0.500,
-        1.000, 1.000, 0.500,
-        0.000, 0.333, 1.000,
-        0.000, 0.667, 1.000,
-        0.000, 1.000, 1.000,
-        0.333, 0.000, 1.000,
-        0.333, 0.333, 1.000,
-        0.333, 0.667, 1.000,
-        0.333, 1.000, 1.000,
-        0.667, 0.000, 1.000,
-        0.667, 0.333, 1.000,
-        0.667, 0.667, 1.000,
-        0.667, 1.000, 1.000,
-        1.000, 0.000, 1.000,
-        1.000, 0.333, 1.000,
-        1.000, 0.667, 1.000,
-        0.333, 0.000, 0.000,
-        0.500, 0.000, 0.000,
-        0.667, 0.000, 0.000,
-        0.833, 0.000, 0.000,
-        1.000, 0.000, 0.000,
-        0.000, 0.167, 0.000,
-        0.000, 0.333, 0.000,
-        0.000, 0.500, 0.000,
-        0.000, 0.667, 0.000,
-        0.000, 0.833, 0.000,
-        0.000, 1.000, 0.000,
-        0.000, 0.000, 0.167,
-        0.000, 0.000, 0.333,
-        0.000, 0.000, 0.500,
-        0.000, 0.000, 0.667,
-        0.000, 0.000, 0.833,
-        0.000, 0.000, 1.000,
-        0.000, 0.000, 0.000,
-        0.143, 0.143, 0.143,
-        0.286, 0.286, 0.286,
-        0.429, 0.429, 0.429,
-        0.571, 0.571, 0.571,
-        0.714, 0.714, 0.714,
-        0.857, 0.857, 0.857,
-        0.000, 0.447, 0.741,
-        0.314, 0.717, 0.741,
-        0.50, 0.5, 0
-    ]
-).astype(np.float32).reshape(-1, 3)
+def rainbow_fill(size=50):  # simpler way to generate rainbow color
+    import pylab as plt
+    cmap = plt.get_cmap('jet')
+    color_list = []
+
+    for n in range(size):
+        color = cmap(n/size)
+        color_list.append(color[:3])  # might need rounding? (round(x, 3) for x in color)[:3]
+
+    return np.array(color_list)
+
+
+_COLORS = rainbow_fill(80).astype(np.float32).reshape(-1, 3)
 
 
 def vis(img, boxes, scores, cls_ids, conf=0.5, class_names=None):

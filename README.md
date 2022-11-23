@@ -22,6 +22,7 @@ pip install pycuda
 
 [By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
+![image](https://user-images.githubusercontent.com/60921095/203555073-91606059-f3b6-49c2-b821-c3fa4c14ac42.png)
 
 ## Examples
 

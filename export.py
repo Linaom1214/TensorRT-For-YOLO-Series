@@ -106,7 +106,8 @@ class EngineBuilder:
 
         self.builder = trt.Builder(self.trt_logger)
         self.config = self.builder.create_builder_config()
-        self.config.max_workspace_size = workspace * (2 ** 30)
+        self.config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace * (2 ** 30))
+        # self.config.max_workspace_size = workspace * (2 ** 30)  # Deprecation
 
         self.batch_size = None
         self.network = None
@@ -140,7 +141,7 @@ class EngineBuilder:
         for output in outputs:
             print("Output '{}' with shape {} and dtype {}".format(output.name, output.shape, output.dtype))
         assert self.batch_size > 0
-        self.builder.max_batch_size = self.batch_size
+        # self.builder.max_batch_size = self.batch_size  # This no effect for networks created with explicit batch dimension mode. Also DEPRECATED.
 
         if end2end:
             previous_output = self.network.get_output(0)
@@ -239,9 +240,10 @@ class EngineBuilder:
                         ImageBatcher(calib_input, calib_shape, calib_dtype, max_num_images=calib_num_images,
                                      exact_batches=True))
 
-        with self.builder.build_engine(self.network, self.config) as engine, open(engine_path, "wb") as f:
+        # with self.builder.build_engine(self.network, self.config) as engine, open(engine_path, "wb") as f:
+        with self.builder.build_serialized_network(self.network, self.config) as engine, open(engine_path, "wb") as f:
             print("Serializing engine to file: {:}".format(engine_path))
-            f.write(engine.serialize())
+            f.write(engine)  # .serialize()
 
 def main(args):
     builder = EngineBuilder(args.verbose, args.workspace)

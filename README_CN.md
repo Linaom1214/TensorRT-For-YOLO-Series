@@ -6,6 +6,7 @@ YOLOv7、YOLOv6、 YOLOX、 YOLOV5
 ~Notice： **当前C++ demo 不支持端到端模型**~
 
 ## 更新 
+- 2022.11.29 **解决不同模型输入尺寸不同导致的问题**
 - 2022.8.13 **重构仓库**
 - 2022.8.11 **端到端导出支持, 更简洁的端到端导出方法**
 - 2022.7.8 支持YOLOV7 
@@ -24,7 +25,7 @@ pip install pycuda
 [By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
 ## 如何上手
-
+![image](https://user-images.githubusercontent.com/60921095/203555073-91606059-f3b6-49c2-b821-c3fa4c14ac42.png)
 ### Python
 
 文件 `Examples.ipynb` 中提供了详细的Demo <a href="https://github.com/Linaom1214/TensorRT-For-YOLO-Series/blob/main/Examples.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Jupyter Notebook"></a>

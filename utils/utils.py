@@ -3,11 +3,10 @@ import pycuda.autoinit
 import pycuda.driver as cuda
 import numpy as np
 import cv2
-
+import matplotlib.pyplot as plt
 
 class BaseEngine(object):
-    def __init__(self, engine_path, imgsz=(640,640)):
-        self.imgsz = imgsz
+    def __init__(self, engine_path):
         self.mean = None
         self.std = None
         self.n_classes = 80
@@ -229,7 +228,6 @@ def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
 
 
 def rainbow_fill(size=50):  # simpler way to generate rainbow color
-    import pylab as plt
     cmap = plt.get_cmap('jet')
     color_list = []
 

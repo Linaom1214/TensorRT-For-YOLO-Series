@@ -5,6 +5,7 @@
 [YOLOv7](https://github.com/WongKinYiu/yolov7)、[YOLOv6](https://github.com/meituan/YOLOv6)、 [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX)、 [YOLOV5](https://github.com/ultralytics/yolov5)、[YOLOv3](https://github.com/ultralytics/yolov3)
 
 ## Update 
+- 2022.11.29 fix some bug thanks [JiaPai12138](https://github.com/JiaPai12138)
 - 2022.8.13 rename reop、 public new version、 **C++ for end2end**
 - 2022.8.11 nms plugin support ==> Now you can set --end2end flag while use `export.py` get a engine file  
 - 2022.7.8 support YOLOV7 
@@ -22,9 +23,8 @@ pip install pycuda
 
 [By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
-![image](https://user-images.githubusercontent.com/60921095/203555073-91606059-f3b6-49c2-b821-c3fa4c14ac42.png)
-
 ## Examples
+![image](https://user-images.githubusercontent.com/60921095/203555073-91606059-f3b6-49c2-b821-c3fa4c14ac42.png)
 
 ### Python
 

@@ -7,9 +7,8 @@ import os
 import argparse
 
 class Predictor(BaseEngine):
-    def __init__(self, engine_path , imgsz=(640,640)):
+    def __init__(self, engine_path):
         super(Predictor, self).__init__(engine_path)
-        self.imgsz = imgsz # your model infer image size
         self.n_classes = 80  # your model classes
 
 if __name__ == '__main__':

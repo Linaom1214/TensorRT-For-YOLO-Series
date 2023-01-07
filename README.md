@@ -55,7 +55,7 @@ pip install pycuda
 
 [By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
-## Python Examples Demo
+## Python Demo
 
 1. [YOLOv5](##YOLOv5)
 2. [YOLOx](##YOLOX)
@@ -227,7 +227,7 @@ pip install pycuda
 ```
 
 
-### C++ 
+### C++ Demo
 
 support **NMS plugin**
 show in [C++ Demo](cpp/README.MD)
@@ -245,10 +245,6 @@ If you use this repo in your publication, please cite it by using the following 
   year =         {2022}
 }
 ```
-
-## Old version
-[v0.0.1](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/releases/tag/v0.0.1)
-[v0.0.2](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/releases/tag/v0.0.2)
 
 ## Sponsor
 

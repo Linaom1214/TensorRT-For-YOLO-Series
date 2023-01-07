@@ -19,6 +19,18 @@
 - 2022.7.8 support YOLOv7 
 - 2022.7.3 support TRT int8  post-training quantization 
 
+##  Prepare TRT Env 
+`Install via Python`
+```
+pip install --upgrade setuptools pip --user
+pip install nvidia-pyindex
+pip install --upgrade nvidia-tensorrt
+pip install pycuda
+```
+`Install via  C++`
+
+[By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
+
 ## Try YOLOv8
 ### Install && Download [Weights](https://github.com/ultralytics/assets/)
 ```shell
@@ -42,18 +54,6 @@ python export.py -o yolov8n.onnx -e yolov8n.trt --end2end --v8
 ```shell
 python trt.py -e yolov8n.trt  -i src/1.jpg -o yolov8n-1.jpg --end2end 
 ```
-
-##  Prepare TRT Env 
-`Install via Python`
-```
-pip install --upgrade setuptools pip --user
-pip install nvidia-pyindex
-pip install --upgrade nvidia-tensorrt
-pip install pycuda
-```
-`Install via  C++`
-
-[By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
 ## Python Demo
 <details><summary> <b>Expand</b> </summary>

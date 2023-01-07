@@ -56,6 +56,7 @@ pip install pycuda
 [By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
 ## Python Demo
+<details><summary> <b>Expand</b> </summary>
 
 1. [YOLOv5](##YOLOv5)
 2. [YOLOx](##YOLOX)
@@ -225,7 +226,7 @@ pip install pycuda
 ```python
 !python trt.py -e yolov7-tiny-norm.trt  -i src/1.jpg -o yolov7-tiny-norm-1.jpg
 ```
-
+</details>
 
 ### C++ Demo
 

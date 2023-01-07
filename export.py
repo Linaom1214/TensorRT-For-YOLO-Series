@@ -113,11 +113,12 @@ class EngineBuilder:
         self.network = None
         self.parser = None
 
-    def create_network(self, onnx_path, end2end, conf_thres, iou_thres, max_det):
+    def create_network(self, onnx_path, end2end, conf_thres, iou_thres, max_det, **kwargs):
         """
         Parse the ONNX graph and create the corresponding TensorRT network definition.
         :param onnx_path: The path to the ONNX graph to load.
         """
+        v8 = kwargs['v8']
         network_flags = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
 
         self.network = self.builder.create_network(network_flags)
@@ -146,26 +147,41 @@ class EngineBuilder:
         if end2end:
             previous_output = self.network.get_output(0)
             self.network.unmark_output(previous_output)
-            # output [1, 8400, 85]
-            # slice boxes, obj_score, class_scores
-            strides = trt.Dims([1,1,1])
-            starts = trt.Dims([0,0,0])
-            bs, num_boxes, temp = previous_output.shape
-            shapes = trt.Dims([bs, num_boxes, 4])
-            # [0, 0, 0] [1, 8400, 4] [1, 1, 1]
-            boxes = self.network.add_slice(previous_output, starts, shapes, strides)
-            num_classes = temp -5 
-            starts[2] = 4
-            shapes[2] = 1
-            # [0, 0, 4] [1, 8400, 1] [1, 1, 1]
-            obj_score = self.network.add_slice(previous_output, starts, shapes, strides)
-            starts[2] = 5
-            shapes[2] = num_classes
-            # [0, 0, 5] [1, 8400, 80] [1, 1, 1]
-            scores = self.network.add_slice(previous_output, starts, shapes, strides)
-            # scores = obj_score * class_scores => [bs, num_boxes, nc]
-            updated_scores = self.network.add_elementwise(obj_score.get_output(0), scores.get_output(0), trt.ElementWiseOperation.PROD)
-
+            if not v8: 
+                # output [1, 8400, 85]
+                # slice boxes, obj_score, class_scores
+                strides = trt.Dims([1,1,1])
+                starts = trt.Dims([0,0,0])
+                bs, num_boxes, temp = previous_output.shape
+                shapes = trt.Dims([bs, num_boxes, 4])
+                # [0, 0, 0] [1, 8400, 4] [1, 1, 1]
+                boxes = self.network.add_slice(previous_output, starts, shapes, strides)
+                num_classes = temp -5 
+                starts[2] = 4
+                shapes[2] = 1
+                # [0, 0, 4] [1, 8400, 1] [1, 1, 1]
+                obj_score = self.network.add_slice(previous_output, starts, shapes, strides)
+                starts[2] = 5
+                shapes[2] = num_classes
+                # [0, 0, 5] [1, 8400, 80] [1, 1, 1]
+                scores = self.network.add_slice(previous_output, starts, shapes, strides)
+                # scores = obj_score * class_scores => [bs, num_boxes, nc]
+                scores = self.network.add_elementwise(obj_score.get_output(0), scores.get_output(0), trt.ElementWiseOperation.PROD)
+            else:
+                strides = trt.Dims([1,1,1])
+                starts = trt.Dims([0,0,0])
+                previous_output = self.network.add_shuffle(previous_output)
+                previous_output.second_transpose    = (0, 2, 1)
+                print(previous_output.get_output(0).shape)
+                bs, num_boxes, temp = previous_output.get_output(0).shape
+                shapes = trt.Dims([bs, num_boxes, 4])
+                # [0, 0, 0] [1, 8400, 4] [1, 1, 1]
+                boxes = self.network.add_slice(previous_output.get_output(0), starts, shapes, strides)
+                num_classes = temp -4 
+                starts[2] = 4
+                shapes[2] = num_classes
+                # [0, 0, 4] [1, 8400, 80] [1, 1, 1]
+                scores = self.network.add_slice(previous_output.get_output(0), starts, shapes, strides)
             '''
             "plugin_version": "1",
             "background_class": -1,  # no background class
@@ -189,7 +205,7 @@ class EngineBuilder:
             fc = trt.PluginFieldCollection(fc) 
             nms_layer = creator.create_plugin("nms_layer", fc)
 
-            layer = self.network.add_plugin_v2([boxes.get_output(0), updated_scores.get_output(0)], nms_layer)
+            layer = self.network.add_plugin_v2([boxes.get_output(0), scores.get_output(0)], nms_layer)
             layer.get_output(0).name = "num"
             layer.get_output(1).name = "boxes"
             layer.get_output(2).name = "scores"
@@ -247,7 +263,7 @@ class EngineBuilder:
 
 def main(args):
     builder = EngineBuilder(args.verbose, args.workspace)
-    builder.create_network(args.onnx, args.end2end, args.conf_thres, args.iou_thres, args.max_det)
+    builder.create_network(args.onnx, args.end2end, args.conf_thres, args.iou_thres, args.max_det, v8=args.v8)
     builder.create_engine(args.engine, args.precision, args.calib_input, args.calib_cache, args.calib_num_images,
                           args.calib_batch_size)
 
@@ -275,7 +291,8 @@ if __name__ == "__main__":
                         help="The iou threshold for the nms, default: 0.5")
     parser.add_argument("--max_det", default=100, type=int,
                         help="The total num for results, default: 100")
-
+    parser.add_argument("--v8", default=False, action="store_true",
+                        help="use yolov8 model, default: False")
     args = parser.parse_args()
     print(args)
     if not all([args.onnx, args.engine]):

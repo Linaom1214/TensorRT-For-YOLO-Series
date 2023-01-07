@@ -2,14 +2,45 @@
 ## [简体中文](README_CN.md)
 
 ## Support
-[YOLOv7](https://github.com/WongKinYiu/yolov7)、[YOLOv6](https://github.com/meituan/YOLOv6)、 [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX)、 [YOLOV5](https://github.com/ultralytics/yolov5)、[YOLOv3](https://github.com/ultralytics/yolov3)
+[YOLOv8](https://v8docs.ultralytics.com/)、[YOLOv7](https://github.com/WongKinYiu/yolov7)、[YOLOv6](https://github.com/meituan/YOLOv6)、 [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX)、 [YOLOV5](https://github.com/ultralytics/yolov5)、[YOLOv3](https://github.com/ultralytics/yolov3)
+[x] YOLOv8
+[x] YOLOv7
+[x] YOLOv6
+[x] YOLOX
+[x] YOLOv5
+[x] YOLOv3 
 
 ## Update 
-- 2022.11.29 fix some bug thanks [JiaPai12138](https://github.com/JiaPai12138)
+- 2023.1.7 support YOLOv8
+- 2022.11.29 fix some bug thanks @[JiaPai12138](https://github.com/JiaPai12138)
 - 2022.8.13 rename reop、 public new version、 **C++ for end2end**
 - 2022.8.11 nms plugin support ==> Now you can set --end2end flag while use `export.py` get a engine file  
-- 2022.7.8 support YOLOV7 
+- 2022.7.8 support YOLOv7 
 - 2022.7.3 support TRT int8  post-training quantization 
+
+## Try YOLOv8
+### Install && Download [Weights](https://github.com/ultralytics/assets/)
+```shell
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ultralytics==0.0.59
+wget https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt 
+```
+### Export ONNX
+```Python
+from ultralytics import YOLO
+
+model = YOLO("yolov8s.pt")
+model.fuse()  
+model.info(verbose=False)  # Print model information
+model.export(format='onnx')  # TODO: 
+```
+### Generate TRT File 
+```shell
+python export.py -o yolov8n.onnx -e yolov8n.trt --end2end --v8
+```
+### infer 
+```shell
+python trt.py -e yolov8n.trt  -i src/1.jpg -o yolov8n-1.jpg --end2end 
+```
 
 ##  Prepare TRT Env 
 `Python`

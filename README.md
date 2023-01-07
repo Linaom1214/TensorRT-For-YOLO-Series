@@ -38,29 +38,193 @@ model.export(format='onnx')  # TODO:
 ```shell
 python export.py -o yolov8n.onnx -e yolov8n.trt --end2end --v8
 ```
-### infer 
+### Inference 
 ```shell
 python trt.py -e yolov8n.trt  -i src/1.jpg -o yolov8n-1.jpg --end2end 
 ```
 
 ##  Prepare TRT Env 
-`Python`
+`Install via Python`
 ```
 pip install --upgrade setuptools pip --user
 pip install nvidia-pyindex
 pip install --upgrade nvidia-tensorrt
 pip install pycuda
 ```
-`C++`
+`Install via  C++`
 
 [By Docker](https://github.com/NVIDIA/TensorRT/blob/main/docker/ubuntu-20.04.Dockerfile)
 
-## Examples
-![image](https://user-images.githubusercontent.com/60921095/203555073-91606059-f3b6-49c2-b821-c3fa4c14ac42.png)
+## Python Examples Demo
 
-### Python
+1. [YOLOv5](##YOLOv5)
+2. [YOLOx](##YOLOX)
+3. [YOLOv6](##YOLOV6)
+4. [YOLOv7](##YOLOv7)
 
-show in `Examples.ipynb` <a href="https://github.com/Linaom1214/TensorRT-For-YOLO-Series/blob/main/Examples.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Jupyter Notebook"></a>
+
+## YOLOv5
+
+
+```python
+!git clone https://github.com/ultralytics/yolov5.git
+```
+
+```python
+!wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5n.pt
+```
+
+
+```python
+!python yolov5/export.py --weights yolov5n.pt --include onnx --simplify --inplace 
+```
+
+### include  NMS Plugin
+
+
+```python
+!python export.py -o yolov5n.onnx -e yolov5n.trt --end2end
+```
+
+
+```python
+!python trt.py -e yolov5n.trt  -i src/1.jpg -o yolov5n-1.jpg --end2end 
+```
+
+###  exclude NMS Plugin
+
+
+```python
+!python export.py -o yolov5n.onnx -e yolov5n.trt 
+```
+
+
+```python
+!python trt.py -e yolov5n.trt  -i src/1.jpg -o yolov5n-1.jpg 
+```
+
+## YOLOX 
+
+
+```python
+!git clone https://github.com/Megvii-BaseDetection/YOLOX.git
+```
+
+
+```python
+!wget https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.pth
+```
+
+
+```python
+!cd YOLOX && pip3 install -v -e . --user
+```
+
+
+```python
+!cd YOLOX && python tools/export_onnx.py --output-name ../yolox_s.onnx -n yolox-s -c ../yolox_s.pth --decode_in_inference
+```
+
+### include  NMS Plugin
+
+
+```python
+!python export.py -o yolox_s.onnx -e yolox_s.trt --end2end
+```
+
+
+```python
+!python trt.py -e yolox_s.trt  -i src/1.jpg -o yolox-1.jpg --end2end 
+```
+
+###  exclude NMS Plugin
+
+
+```python
+!python export.py -o yolox_s.onnx -e yolox_s.trt 
+```
+
+
+```python
+!python trt.py -e yolox_s.trt  -i src/1.jpg -o yolox-1.jpg 
+```
+
+## YOLOv6 
+
+
+```python
+!wget https://github.com/meituan/YOLOv6/releases/download/0.1.0/yolov6s.onnx
+```
+
+### include  NMS Plugin
+
+
+```python
+!python export.py -o yolov6s.onnx -e yolov6s.trt --end2end
+```
+
+
+```python
+!python trt.py -e yolov6s.trt  -i src/1.jpg -o yolov6s-1.jpg --end2end
+```
+
+###  exclude NMS Plugin
+
+
+```python
+!python export.py -o yolov6s.onnx -e yolov6s.trt 
+```
+
+
+```python
+!python trt.py -e yolov6s.trt  -i src/1.jpg -o yolov6s-1.jpg 
+```
+
+## YOLOv7
+
+
+```python
+!git clone https://github.com/WongKinYiu/yolov7.git
+```
+
+
+```python
+!wget https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-tiny.pt
+```
+
+
+```python
+!pip install -r yolov7/requirements.txt
+```
+
+
+```python
+!python yolov7/export.py --weights yolov7-tiny.pt --grid  --simplify
+```
+
+### include  NMS Plugin
+
+
+```python
+!python export.py -o yolov7-tiny.onnx -e yolov7-tiny.trt --end2end
+```
+
+
+```python
+!python trt.py -e yolov7-tiny.trt  -i src/1.jpg -o yolov7-tiny-1.jpg --end2end
+```
+
+###  exclude NMS Plugin
+
+
+```python
+!python export.py -o yolov7-tiny.onnx -e yolov7-tiny-norm.trt
+```
+
+
+```python
+!python trt.py -e yolov7-tiny-norm.trt  -i src/1.jpg -o yolov7-tiny-norm-1.jpg
+```
 
 
 ### C++ 

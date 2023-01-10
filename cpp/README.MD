@@ -1,5 +1,18 @@
 ## With NMS Plugin
 
+###  Generate trt File [More Details](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/blob/main/README.md)
+```shell
+python export.py -o mdoel.onnx -e model.trt --end2end --v8 only for yolov8
+```
+
+- [x] YOLOv8
+- [x] YOLOv7
+- [x] YOLOv6
+- [x] YOLOX
+- [x] YOLOv5
+- [x] YOLOv3 
+
+
 **Edit code for your model**
 
 ```c++
@@ -16,6 +29,20 @@ make
 
 
 ## Without NMS Plugin
+###  Generate trt File [More Details](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/blob/main/README.md)
+
+```shell
+python export.py -o mdoel.onnx -e model.trt --end2end
+```
+
+
+- [ ] YOLOv8
+- [x] YOLOv7
+- [x] YOLOv6
+- [x] YOLOX
+- [x] YOLOv5
+- [x] YOLOv3 
+
 
 **Edit code for your model**
 

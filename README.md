@@ -251,9 +251,5 @@ If you use this repo in your publication, please cite it by using the following 
 
 Buy me a cup of coffee
 
-
-<table><tr>
-<td><img src=src/alipay.jpg border=0></td>
-<td><img src=src/wechatpay.jpg border=0></td>
-</tr></table>
+![](src/Sponsor.png)
 

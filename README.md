@@ -241,7 +241,7 @@ If you use this repo in your publication, please cite it by using the following 
 ```bibtex
 @Misc{yolotrt2022,
   author =       {Jian Lin},
-  title =        {YOLOTRT: tensorrt for yolo series, nms plugin support},
+  title =        {YOLOTRT: tensorrt for yolo series},
   howpublished = {\url{[https://github.com/Linaom1214/TensorRT-For-YOLO-Series]}},
   year =         {2022}
 }

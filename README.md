@@ -246,10 +246,3 @@ If you use this repo in your publication, please cite it by using the following 
   year =         {2022}
 }
 ```
-
-## Sponsor
-
-Buy me a cup of coffee
-
-![](src/Sponsor.png)
-

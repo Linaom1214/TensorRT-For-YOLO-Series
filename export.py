@@ -14,6 +14,17 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("EngineBuilder").setLevel(logging.INFO)
 log = logging.getLogger("EngineBuilder")
 
+
+# Good example for TensorFlow:
+#  https://docs.nvidia.com/deeplearning/frameworks/tf-trt-user-guide/index.html#static-dynamic-mode
+# COuld take some tips from there
+
+# Another repo about 'How to map yolov7 to TensorRT':
+#  https://github.com/triple-Mu/YOLO-TensorRT8
+# From this repo were taken dynamic batch-size code and thanks to it were added code for dynamic img
+# Additional links about dynamic shapes for TensorRT:
+#  https://forums.developer.nvidia.com/t/tensorrt-use-dynamic-batch-or-specified-batch/232835
+
 class EngineCalibrator(trt.IInt8EntropyCalibrator2):
     """
     Implements the INT8 Entropy Calibrator 2.
@@ -106,14 +117,14 @@ class EngineBuilder:
 
         self.builder = trt.Builder(self.trt_logger)
         self.config = self.builder.create_builder_config()
-        self.config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace * (2 ** 30))
+        # self.config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace * (2 ** 30))
         # self.config.max_workspace_size = workspace * (2 ** 30)  # Deprecation
 
         self.batch_size = None
         self.network = None
         self.parser = None
 
-    def create_network(self, onnx_path, end2end, conf_thres, iou_thres, max_det, **kwargs):
+    def create_network(self, onnx_path, end2end, conf_thres, iou_thres, max_det, batch_size, possible_inputs, **kwargs):
         """
         Parse the ONNX graph and create the corresponding TensorRT network definition.
         :param onnx_path: The path to the ONNX graph to load.
@@ -141,7 +152,27 @@ class EngineBuilder:
             print("Input '{}' with shape {} and dtype {}".format(input.name, input.shape, input.dtype))
         for output in outputs:
             print("Output '{}' with shape {} and dtype {}".format(output.name, output.shape, output.dtype))
-        assert self.batch_size > 0
+            
+        if batch_size is not None or possible_inputs is not None:
+            wandh0 = wandh1 = wandh2 = self.network.get_input(0).shape[-2:]
+            
+            if possible_inputs is not None:
+                wandh0 = possible_inputs[0]
+                wandh1 = possible_inputs[1]
+                wandh2 = possible_inputs[2]
+            
+            name = self.network.get_input(0).name
+            profile = self.builder.create_optimization_profile()
+            print(f'\ndynamic batch profile is\n\
+                {(batch_size[0], 3, *wandh0)}\n\
+                {(batch_size[1], 3, *wandh1)}\n\
+                {(batch_size[2], 3, *wandh2)}'
+            )
+            profile.set_shape(name, (batch_size[0], 3, *wandh0),
+                              (batch_size[1], 3, *wandh1),
+                              (batch_size[2], 3, *wandh2))
+            self.config.add_optimization_profile(profile)
+        
         # self.builder.max_batch_size = self.batch_size  # This no effect for networks created with explicit batch dimension mode. Also DEPRECATED.
 
         if end2end:
@@ -264,7 +295,7 @@ class EngineBuilder:
 
 def main(args):
     builder = EngineBuilder(args.verbose, args.workspace)
-    builder.create_network(args.onnx, args.end2end, args.conf_thres, args.iou_thres, args.max_det, v8=args.v8)
+    builder.create_network(args.onnx, args.end2end, args.conf_thres, args.iou_thres, args.max_det, v8=args.v8, batch_size=args.batch_size, possible_inputs=args.possible_inputs)
     builder.create_engine(args.engine, args.precision, args.calib_input, args.calib_cache, args.calib_num_images,
                           args.calib_batch_size)
 
@@ -294,8 +325,48 @@ if __name__ == "__main__":
                         help="The total num for results, default: 100")
     parser.add_argument("--v8", default=False, action="store_true",
                         help="use yolov8 model, default: False")
+    parser.add_argument('--batch-size',
+                        nargs='+',
+                        type=int,
+                        default=None, #
+                        help='batch_size of tensorrt engine')
+    parser.add_argument('--possible-inputs',
+                        nargs='+',
+                        type=int,
+                        default=None, #
+                        help='batch_size of tensorrt engine')
     args = parser.parse_args()
     print(args)
+    if args.batch_size is not None and isinstance(args.batch_size, list) and len(args.batch_size) > 0:
+        args.batch_size = args.batch_size if len(
+            args.batch_size) == 3 else args.batch_size[-1:] * 3
+        # TODO: Is sorted here needed? I think its needed if only dynamic batch-size needed and not dynamic inputs
+        # args.batch_size.sort()
+    else:
+        # TODO: Will be taken from model and just put none here...
+        args.batch_size = None
+        
+    if args.possible_inputs is not None and isinstance(args.possible_inputs, list) and len(args.possible_inputs) > 0:
+        if len(args.possible_inputs) == 1:
+            args.possible_inputs = [[args.possible_inputs[-1:], args.possible_inputs[-1:]]] * 3
+        elif len(args.possible_inputs) == 2:
+            args.possible_inputs = [args.possible_inputs[-2:]] * 3
+        elif len(args.possible_inputs) == 3:
+            args.possible_inputs = [ 
+                [single_possible_inputs, single_possible_inputs] 
+                for single_possible_inputs in args.possible_inputs
+            ]
+        elif len(args.possible_inputs) == 6:
+            args.possible_inputs = list(map(list, 
+                zip(args.possible_inputs[::2], args.possible_inputs[1::2])
+            ))
+        else:
+            raise Exception(f"Uknown size of possible inputs ({len(args.possible_inputs)}) = {args.possible_inputs}")
+        # TODO: Sort inputs or check order min/opt/max
+    else:
+        # TODO: Will be taken from model and just put none here...
+        args.possible_inputs = None
+        
     if not all([args.onnx, args.engine]):
         parser.print_help()
         log.error("These arguments are required: --onnx and --engine")

@@ -11,7 +11,8 @@
 - [x] YOLOv5
 - [x] YOLOv3 
 
-## Update 
+## Update
+- 2023.4.20 support dynamic batch size and image size. Update quantization. [TaplierShiru]
 - 2023.1.7 support YOLOv8
 - 2022.11.29 fix some bug thanks @[JiaPai12138](https://github.com/JiaPai12138)
 - 2022.8.13 rename reop、 public new version、 **C++ for end2end**

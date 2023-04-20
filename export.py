@@ -328,7 +328,7 @@ if __name__ == "__main__":
     parser.add_argument("--calib_batch_size", default=8, type=int,
                         help="The batch size for the calibration process, default: 8")
     parser.add_argument('--calib_preprocessor',
-                        default='letterbox_yolo',
+                        default=ImageBatcherType.LETTERBOX_YOLO,
                         type=str,
                         help='Preprocess type for calibration (int8). Supported types are: '
                             f'{ImageBatcherType.ONLY_NORMALIZE}, {ImageBatcherType.FIXED_SHAPE_RESIZER}, '

@@ -22,12 +22,27 @@ import numpy as np
 from PIL import Image
 
 
+class ImageBatcherType:
+    ONLY_NORMALIZE = 'norm_only'
+    FIXED_SHAPE_RESIZER = 'fixed_shape_resizer'
+    KEEP_ASPECT_RATIO_RESIZER = 'keep_aspect_ratio_resizer'
+    LETTERBOX_YOLO = 'letterbox_yolo'
+
+    @staticmethod
+    def is_supported_type(image_batcher_type: str) -> bool:
+        return image_batcher_type == ImageBatcherType.FIXED_SHAPE_RESIZER or \
+            image_batcher_type == ImageBatcherType.KEEP_ASPECT_RATIO_RESIZER or \
+            image_batcher_type == ImageBatcherType.LETTERBOX_YOLO or \
+            image_batcher_type == ImageBatcherType.ONLY_NORMALIZE
+
+
+
 class ImageBatcher:
     """
     Creates batches of pre-processed images.
     """
 
-    def __init__(self, input, shape, dtype, max_num_images=None, exact_batches=False, preprocessor="fixed_shape_resizer"):
+    def __init__(self, input, shape, dtype, max_num_images=None, exact_batches=False, preprocessor=ImageBatcherType.FIXED_SHAPE_RESIZER):
         """
         :param input: The input directory to read images from.
         :param shape: The tensor shape of the batch to prepare, either in NCHW or NHWC format.
@@ -76,7 +91,8 @@ class ImageBatcher:
             self.height = self.shape[1]
             self.width = self.shape[2]
         assert all([self.format, self.width > 0, self.height > 0])
-
+        print(f'Input shape = {shape}')
+        print(f'Calibration format={self.format}, image size Height={self.height}, Width={self.width}, preprocessor={preprocessor}')
         # Adapt the number of images as needed
         if max_num_images and 0 < max_num_images < len(self.images):
             self.num_images = max_num_images
@@ -127,22 +143,32 @@ class ImageBatcher:
             height_scale = height / self.height
 
             # Depending on preprocessor, box scaling will be slightly different.
-            if self.preprocessor == "fixed_shape_resizer":
+            if self.preprocessor == ImageBatcherType.FIXED_SHAPE_RESIZER:
                 scale = [self.width / width, self.height / height]
                 image = image.resize((self.width, self.height), resample=Image.BILINEAR)
                 return image, scale
-            elif self.preprocessor == "keep_aspect_ratio_resizer":
+            elif self.preprocessor == ImageBatcherType.KEEP_ASPECT_RATIO_RESIZER:
                 scale = 1.0 / max(width_scale, height_scale)
                 image = image.resize((round(width * scale), round(height * scale)), resample=Image.BILINEAR)
                 pad = Image.new("RGB", (self.width, self.height))
                 pad.paste(pad_color, [0, 0, self.width, self.height])
                 pad.paste(image)
-                return pad, scale
+            elif self.preprocessor == ImageBatcherType.LETTERBOX_YOLO:
+                scale = 1.0 / max(width_scale, height_scale)
+                image = image.resize((round(width * scale), round(height * scale)), resample=Image.BILINEAR)
+                pad = Image.new("RGB", (self.width, self.height))
+                pad.paste(pad_color, [0, 0, self.width, self.height])
+                pad.paste(image, [0, (self.height//2) - image.size[1]//2])
+            elif self.preprocessor == ImageBatcherType.ONLY_NORMALIZE:
+                pad = image.copy()
+                # Assume that model itself will scale outputs
+                scale = None
+            return pad, scale
 
         scale = None
         image = Image.open(image_path)
         image = image.convert(mode='RGB')
-        if self.preprocessor == "fixed_shape_resizer" or self.preprocessor == "keep_aspect_ratio_resizer":
+        if ImageBatcherType.is_supported_type(self.preprocessor):
             #Resize & Pad with ImageNet mean values and keep as [0,255] Normalization
             image, scale = resize_pad(image, (124, 116, 104))
             image = np.asarray(image, dtype=self.dtype)

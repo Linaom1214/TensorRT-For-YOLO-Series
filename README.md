@@ -12,6 +12,7 @@
 - [x] YOLOv3 
 
 ## Update 
+- 2023.5.12 Update
 - 2023.1.7 support YOLOv8
 - 2022.11.29 fix some bug thanks @[JiaPai12138](https://github.com/JiaPai12138)
 - 2022.8.13 rename reop、 public new version、 **C++ for end2end**
@@ -34,8 +35,7 @@ pip install pycuda
 ## Try YOLOv8
 ### Install && Download [Weights](https://github.com/ultralytics/assets/)
 ```shell
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ultralytics==0.0.59
-wget https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt 
+pip installultralytics
 ```
 ### Export ONNX
 ```Python
@@ -48,7 +48,7 @@ model.export(format='onnx')  # TODO:
 ```
 ### Generate TRT File 
 ```shell
-python export.py -o yolov8n.onnx -e yolov8n.trt --end2end --v8
+python export.py -o yolov8n.onnx -e yolov8n.trt --end2end --v8 --fp32
 ```
 ### Inference 
 ```shell

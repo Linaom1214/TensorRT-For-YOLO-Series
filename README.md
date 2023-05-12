@@ -35,7 +35,7 @@ pip install pycuda
 ## Try YOLOv8
 ### Install && Download [Weights](https://github.com/ultralytics/assets/)
 ```shell
-pip installultralytics
+pip install ultralytics
 ```
 ### Export ONNX
 ```Python

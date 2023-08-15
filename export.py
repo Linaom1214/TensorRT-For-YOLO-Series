@@ -5,9 +5,9 @@ import argparse
 
 import numpy as np
 import tensorrt as trt
-import pycuda.driver as cuda
-import pycuda.autoinit
+from cuda import cudart
 
+from utils import common 
 from image_batch import ImageBatcher
 
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,7 @@ class EngineCalibrator(trt.IInt8EntropyCalibrator2):
         """
         self.image_batcher = image_batcher
         size = int(np.dtype(self.image_batcher.dtype).itemsize * np.prod(self.image_batcher.shape))
-        self.batch_allocation = cuda.mem_alloc(size)
+        self.batch_allocation = common.cuda_call(cudart.cudaMalloc(size))
         self.batch_generator = self.image_batcher.get_batch()
 
     def get_batch_size(self):
@@ -62,7 +62,7 @@ class EngineCalibrator(trt.IInt8EntropyCalibrator2):
         try:
             batch, _, _ = next(self.batch_generator)
             log.info("Calibrating image {} / {}".format(self.image_batcher.image_index, self.image_batcher.num_images))
-            cuda.memcpy_htod(self.batch_allocation, np.ascontiguousarray(batch))
+            common.memcpy_host_to_device(self.batch_allocation, np.ascontiguousarray(batch))
             return [int(self.batch_allocation)]
         except StopIteration:
             log.info("Finished calibration batches")
@@ -74,7 +74,7 @@ class EngineCalibrator(trt.IInt8EntropyCalibrator2):
         Read the calibration cache file stored on disk, if it exists.
         :return: The contents of the cache file, if any.
         """
-        if os.path.exists(self.cache_file):
+        if self.cache_file is not None and os.path.exists(self.cache_file):
             with open(self.cache_file, "rb") as f:
                 log.info("Using calibration cache file: {}".format(self.cache_file))
                 return f.read()
@@ -85,6 +85,8 @@ class EngineCalibrator(trt.IInt8EntropyCalibrator2):
         Store the calibration cache to a file on disk.
         :param cache: The contents of the calibration cache to store.
         """
+        if self.cache_file is None:
+            return
         with open(self.cache_file, "wb") as f:
             log.info("Writing calibration cache data to: {}".format(self.cache_file))
             f.write(cache)

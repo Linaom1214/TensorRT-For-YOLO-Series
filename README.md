@@ -1,5 +1,4 @@
 # YOLO Series TensorRT Python/C++ 
-## [简体中文](README_CN.md)
 
 ## Support
 [YOLOv8](https://v8docs.ultralytics.com/)、[YOLOv7](https://github.com/WongKinYiu/yolov7)、[YOLOv6](https://github.com/meituan/YOLOv6)、 [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX)、 [YOLOV5](https://github.com/ultralytics/yolov5)、[YOLOv3](https://github.com/ultralytics/yolov3)
@@ -12,6 +11,7 @@
 - [x] YOLOv3 
 
 ## Update 
+- 2023.8.15 Support cuda-python
 - 2023.5.12 Update
 - 2023.1.7 support YOLOv8
 - 2022.11.29 fix some bug thanks @[JiaPai12138](https://github.com/JiaPai12138)
@@ -23,10 +23,8 @@
 ##  Prepare TRT Env 
 `Install via Python`
 ```
-pip install --upgrade setuptools pip --user
-pip install nvidia-pyindex
-pip install --upgrade nvidia-tensorrt
-pip install pycuda
+pip install tensorrt
+pip install cuda-python
 ```
 `Install via  C++`
 

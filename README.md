@@ -12,6 +12,7 @@
 - [x] YOLOv3 
 
 ## Update 
+- 2023.8.15 Support [cuda-python](https://github.com/Linaom1214/TensorRT-For-YOLO-Series/tree/cuda-python)
 - 2023.5.12 Update
 - 2023.1.7 support YOLOv8
 - 2022.11.29 fix some bug thanks @[JiaPai12138](https://github.com/JiaPai12138)
@@ -27,6 +28,7 @@ pip install --upgrade setuptools pip --user
 pip install nvidia-pyindex
 pip install --upgrade nvidia-tensorrt
 pip install pycuda
+pip install cuda-python
 ```
 `Install via  C++`
 

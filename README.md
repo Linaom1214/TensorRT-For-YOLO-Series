@@ -51,7 +51,7 @@ model.export(format='onnx')
 
 ### Generate TRT File 
 ```shell
-python export.py  -o yolo112n.onnx -e yolo12n.trt --end2end --v8 -p fp32
+python export.py  -o yolo12n.onnx -e yolo12n.trt --end2end --v8 -p fp32
 ```
 ### Inference 
 ```shell
@@ -322,5 +322,6 @@ If you use this repo in your publication, please cite it by using the following 
 Buy me a cup of coffee
 
 ![](src/Sponsor.png)
+
 
 
